@@ -137,7 +137,9 @@ export function createWorld(scene, id = 'newyork') {
   // blokken met straten ertussen, zodat je er altijd omheen kunt lopen.
   function fillRing(kind) {
     const groundCol={newyork:'#6b7078',wakanda:'#4e8a5c',asgard:'#a9915a',kamartaj:'#8b7d62',titan:'#a8653a',savage:'#3f7a46'}[kind]||'#777';
-    box(mat('fillground'+kind,groundCol),0,-.07,0,330,.1,330);
+    // Alleen buiten het oude speelveld, en iets lager dan bestaande vloeren: voorkomt knipperende (z-fighting) vlakken.
+    if(kind!=='titan'&&kind!=='savage'){const fg=mat('fillground'+kind,groundCol);
+      box(fg,111,-.13,0,108,.1,330);box(fg,-111,-.13,0,108,.1,330);box(fg,0,-.13,111,114,.1,108);box(fg,0,-.13,-111,114,.1,108);}
     const wall1=mat('fw1'+kind,{newyork:'#8c93a0',wakanda:'#b8a37a',asgard:'#d2b46a',kamartaj:'#a66a4a',titan:'#7e4a30',savage:'#6e6a5a'}[kind]||'#888');
     const wall2=mat('fw2'+kind,{newyork:'#5d7a92',wakanda:'#7a5bb8',asgard:'#e8d28f',kamartaj:'#8e7a56',titan:'#a8653a',savage:'#8c8a78'}[kind]||'#666');
     for(let gx=-132;gx<=132;gx+=22)for(let gz=-132;gz<=132;gz+=22) {

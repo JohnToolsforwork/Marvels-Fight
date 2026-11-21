@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121205119';
-import {startUpdater} from './update.js?v=20261121205119';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121205119';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121205119';
-import {createWorld} from './world.js?v=20261121205119';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121205119';
-import {createDuel} from './pvp.js?v=20261121205119';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121205119';
-import {updateNPCFlight} from './npc-flight.js?v=20261121205119';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121205119';
+import {music} from './music.js?v=20261121205301';
+import {startUpdater} from './update.js?v=20261121205301';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121205301';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121205301';
+import {createWorld} from './world.js?v=20261121205301';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121205301';
+import {createDuel} from './pvp.js?v=20261121205301';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121205301';
+import {updateNPCFlight} from './npc-flight.js?v=20261121205301';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121205301';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -17,7 +17,7 @@ let hasSavedQuality=false;
 try{const saved=JSON.parse(localStorage.getItem('marvel-city-settings')||'{}');hasSavedQuality=typeof saved.high==='boolean';Object.assign(settings,saved);}catch{}
 const saveSettings=()=>{try{localStorage.setItem('marvel-city-settings',JSON.stringify(settings));}catch{}};
 let renderer;
-try{const context=canvas.getContext('webgl2',{alpha:false,antialias:true,powerPreference:'high-performance'});renderer=context?new THREE.WebGLRenderer({canvas,context,antialias:true,alpha:false}):new SoftwareRenderer({canvas});}catch(e){renderer=new SoftwareRenderer({canvas});}
+try{const context=canvas.getContext('webgl2',{alpha:false,antialias:true,powerPreference:'high-performance'});renderer=context?new THREE.WebGLRenderer({canvas,context,antialias:true,alpha:false,logarithmicDepthBuffer:true}):new SoftwareRenderer({canvas});}catch(e){renderer=new SoftwareRenderer({canvas});}
 if(renderer.isSoftwareRenderer&&!hasSavedQuality)settings.high=false;
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;
 renderer.shadowMap.type=THREE.PCFShadowMap;
@@ -26,7 +26,7 @@ const sun=new THREE.DirectionalLight(0xffe5c8,2.35);sun.position.set(-30,55,24);
 sun.shadow.camera.left=-42;sun.shadow.camera.right=42;sun.shadow.camera.top=42;sun.shadow.camera.bottom=-42;sun.shadow.camera.near=1;sun.shadow.camera.far=150;sun.shadow.bias=-.00016;sun.shadow.normalBias=.025;sun.shadow.radius=2.6;scene.add(sun,sun.target);
 const rim=new THREE.DirectionalLight(0xabcfff,1.35);rim.position.set(25,16,-32);scene.add(rim);
 const roomLights=new THREE.Group();scene.add(roomLights);
-const cameras=[new THREE.PerspectiveCamera(52,1,.12,500),new THREE.PerspectiveCamera(52,1,.12,500)];
+const cameras=[new THREE.PerspectiveCamera(52,1,.25,500),new THREE.PerspectiveCamera(52,1,.25,500)];
 const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
