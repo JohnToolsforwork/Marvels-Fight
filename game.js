@@ -1,13 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=1';
-import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=8';
-import {SoftwareRenderer} from './software-renderer.js?v=6';
-import {createWorld} from './world.js?v=5';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=3';
-import {createDuel} from './pvp.js?v=2';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=6';
-import {updateNPCFlight} from './npc-flight.js?v=5';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=6';
+import {music} from './music.js?v=20261121202521';
+import {startUpdater} from './update.js?v=20261121202521';
+import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121202521';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121202521';
+import {createWorld} from './world.js?v=20261121202521';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121202521';
+import {createDuel} from './pvp.js?v=20261121202521';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121202521';
+import {updateNPCFlight} from './npc-flight.js?v=20261121202521';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121202521';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -675,7 +676,7 @@ function frame(){
 }
 
 function boot(){
- loadWorld('newyork');fillRoster();fillP2();chooseMode('explore');setQuality();setSound();resize();$('loading').hidden=true;frame();renderPortraits().catch(e=>console.warn('Portretten:',e));
+ startUpdater(()=>state);loadWorld('newyork');fillRoster();fillP2();chooseMode('explore');setQuality();setSound();resize();$('loading').hidden=true;frame();renderPortraits().catch(e=>console.warn('Portretten:',e));
  if(renderer.isSoftwareRenderer){const status=document.createElement('span');status.id='renderer-status';status.className='compatibility-badge';status.textContent='COMPATIBELE 3D-WEERGAVE';status.title='Deze browser biedt geen WebGL. Dezelfde 3D-wereld wordt met vereenvoudigde belichting weergegeven.';$('menu').append(status);}
 }
 boot();
