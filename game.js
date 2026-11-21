@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121233610';
-import {startUpdater} from './update.js?v=20261121233610';
-import {createCivilians} from './civilians.js?v=20261121233610';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121233610';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121233610';
-import {createWorld} from './world.js?v=20261121233610';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121233610';
-import {createDuel} from './pvp.js?v=20261121233610';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121233610';
-import {updateNPCFlight} from './npc-flight.js?v=20261121233610';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121233610';
+import {music} from './music.js?v=20261121233916';
+import {startUpdater} from './update.js?v=20261121233916';
+import {createCivilians} from './civilians.js?v=20261121233916';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121233916';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121233916';
+import {createWorld} from './world.js?v=20261121233916';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121233916';
+import {createDuel} from './pvp.js?v=20261121233916';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121233916';
+import {updateNPCFlight} from './npc-flight.js?v=20261121233916';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121233916';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -377,9 +377,9 @@ function teleportActor(a){
  let spot=null;
  for(let i=0;i<30&&!spot;i++){const x=(Math.random()*2-1)*lim,z=(Math.random()*2-1)*lim;if(!blocked(x,z,a.radius+.5,0,world.colliders,world.bounds))spot={x,z};}
  if(!spot)return;
- if(window.__mf)window.__mf.tp=(window.__mf.tp||0)+1;
+ if(window.__mf){window.__mf.tp=(window.__mf.tp||0)+1;(window.__mf.log??=[]).push([a.def.id,Math.round(a.group.position.x),Math.round(a.group.position.z),Math.round(spot.x),Math.round(spot.z),Math.round(elapsed)]);}
  burst(eye(a),'#7fe3ff',3,'sphere',.6);
- a.group.position.set(spot.x,0,spot.z);a.vy=0;a.path=[];a.pathAge=0;a.detour=null;a.tpCd=8;a.invulnerable=Math.max(a.invulnerable,1);
+ a.group.position.set(spot.x,0,spot.z);a.vy=0;a.path=[];a.pathAge=0;a.detour=null;a.tpCd=8;if(a.player<0)a.noHouseUntil=elapsed+70;a.invulnerable=Math.max(a.invulnerable,1);
  burst(eye(a),'#7fe3ff',3,'sphere',.8);
  if(a.player>=0){toast('Geteleporteerd naar een andere plek in de stad!',2.5);sound('special',.05);cameraStates[0].yaw=cameraStates[0].yaw;updateCamera(a.player,1,true);}
 }
@@ -387,9 +387,9 @@ function updateTeleports(dt){
  const hs=world.houses;if(!hs||!hs.length||mode==='story')return;
  for(const a of actors){
   if(a.active===false||a.dead)continue;
-  a.tpCd=Math.max(0,(a.tpCd||0)-dt);if(a.tpCd>0||a.group.position.y>3)continue;
+  a.tpCd=Math.max(0,(a.tpCd||0)-dt);if(a.tpCd>0||a.group.position.y>3||(a.player<0&&elapsed<(a.noHouseUntil||0)))continue;
   const p=a.group.position;
-  for(const h of hs){if(Math.abs(p.x-h.tx)<2.6&&Math.abs(p.z-h.tz)<2.6&&Math.hypot(p.x-h.tx,p.z-h.tz)<2.4){teleportActor(a);break;}}
+  for(const h of hs){if(Math.hypot(p.x-h.tx,p.z-h.tz)<3.2){teleportActor(a);break;}}
  }
 }
 function awardCivilian(a,text){
@@ -766,9 +766,9 @@ function updateAI(a,dt){
  const b=a.target;
  if(!b){updateNPCFlight(a,dt,{canFly:FLIERS.has(a.def.id),enabled:false,distance:Infinity,targetY:0,maxAltitude:32,floorY:groundHeight(a,a.group.position.y)});return;}
  const spec=SPECS[a.def.id],distance=a.group.position.distanceTo(b.group.position),canSee=clearSight(eye(a),eye(b),world.colliders);
- if(distance>170&&!a.flying&&(a.tpCd||0)<=0&&world.houses?.length&&mode!=='story'){
+ if(distance>170&&!a.flying&&(a.tpCd||0)<=0&&elapsed>(a.noHouseUntil||0)&&world.houses?.length&&mode!=='story'&&Math.max(Math.abs(a.group.position.x),Math.abs(a.group.position.z))>(world.city||330)){
   const nh=nearestHouse(a.group.position);
-  if(nh&&nh.d<Math.min(distance*.6,300)){a.chaseT=0;followPath(a,{x:nh.h.tx,z:nh.h.tz},a.def.speed*.9*(1+Math.min(1.7,Math.max(0,(distance-70)/110))),dt);return;}
+  if(nh&&nh.d<Math.min(distance*.6,300)){a.chaseT=0;if(nh.d<10){const dx=nh.h.tx-a.group.position.x,dz=nh.h.tz-a.group.position.z,l=Math.hypot(dx,dz)||1,sp=a.def.speed*.9;a.moveVelocity.x=dx/l*sp;a.moveVelocity.z=dz/l*sp;const mv=slideMove(a.group.position,dx/l*sp*dt,dz/l*sp*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));a.moving=mv>.001;a.moveSpeed=mv/Math.max(dt,.001);face(a,dx,dz,Math.min(1,dt*8));return;}followPath(a,{x:nh.h.tx,z:nh.h.tz},a.def.speed*.9*(1+Math.min(1.7,Math.max(0,(distance-70)/110))),dt);return;}
  }
  // Komt hij al een tijdje niet dichterbij (bijv. vast tegen een gebouw)? Kies dan even een ander doel of loop een stuk om.
  if(a.chaseTarget!==b){a.chaseTarget=b;a.chaseBest=distance;a.chaseT=0;}

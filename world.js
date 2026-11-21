@@ -207,7 +207,7 @@ export function createWorld(scene, id = 'newyork') {
       if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<28))return;
       if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<32))return;
       placed.push({x,z});
-      const rot=Math.atan2(-x,-z),w=7,d=6,h=4,k=houses.length%3,sn=Math.sin(rot),cs=Math.cos(rot);
+      const rot=Math.round(Math.atan2(-x,-z)/(Math.PI/2))*(Math.PI/2),w=7,d=6,h=4,k=houses.length%3,sn=Math.sin(rot),cs=Math.cos(rot);
       box(wallM,x,h/2,z,w,h,d,rot);
       add('cone',roofs[k],x,h+1.5,z,w*1.5,3.2,d*1.5,rot+Math.PI/4);
       box(glowDoor,x+sn*(d/2+.06),1.35,z+cs*(d/2+.06),1.8,2.7,.12,rot,true);
@@ -656,5 +656,5 @@ export function createWorld(scene, id = 'newyork') {
     scene.remove(group);group.traverse(obj=>{if(obj.isInstancedMesh && obj.dispose)obj.dispose();});for(const g of geos.values())g.dispose();for(const m of materials.values())m.dispose();for(const t of textures)t.dispose();
     group.clear();batches.clear();
   }
-  return {id,info,group,colliders,spawns,center:{x:0,z:0},bounds:{minX:-boundary,maxX:boundary,minZ:-boundary,maxZ:boundary},spawnZones,houses,landmarks,interiors,update,setQuality,dispose,groundHeight:()=>0};
+  return {id,info,group,colliders,spawns,center:{x:0,z:0},bounds:{minX:-boundary,maxX:boundary,minZ:-boundary,maxZ:boundary},spawnZones,houses,city:CITY,landmarks,interiors,update,setQuality,dispose,groundHeight:()=>0};
 }
