@@ -195,7 +195,7 @@ function startGame(){
  players.forEach((a,i)=>{a.player=i;a.marker.visible=true;a.marker.material.opacity=.9;a.marker.scale.setScalar(1.15);cameraStates[i].yaw=a.def.team==='heroes'?0:Math.PI;});
  $('menu').hidden=true;$('hud').hidden=false;$('result-modal').hidden=true;$('p2-hud').hidden=mode!=='pvp';$('split-divider').hidden=mode!=='pvp';$('dialogue').hidden=true;
  $('player-name').textContent=players[0].def.name;$('player-power').textContent=players[0].def.power;$('p2-name').textContent=players[1]?.def.name||'';
- $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
+ $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
  if($('scene-caption'))$('scene-caption').hidden=true;document.body.classList.add('in-game');document.body.classList.toggle('split-screen',mode==='pvp');resize();
  players.forEach((a,i)=>updateCamera(i,1,true));
  if(mode==='pvp'&&pvpFormat==='duel'){
@@ -203,7 +203,7 @@ function startGame(){
    duel=createDuel({players,onReset:resetDuelRound,onBanner:(text,meta)=>{if($('round-banner')){$('round-banner').textContent=text;$('round-banner').dataset.kind=meta.kind;$('round-banner').hidden=false;roundBannerUntil=elapsed+(meta.kind==='roundWin'?2.8:meta.kind==='suddenDeath'?3:1.05);}},onRoundEnd:(winner,wins)=>{players.forEach((a,i)=>score[a.def.team]=wins[i]);},onSuddenDeath:()=>players.forEach(a=>a.hp=1),onFinish:()=>finishMatch()});
    toast('1 tegen 1 · win twee rondes. Shift om te ontwijken.',4);
  }else if(mode==='survival')startSurvival();
- else toast(mode==='explore'?'De teams zoeken elkaar op. Verken de wereld of doe mee aan het gevecht.':'Eerste team met 15 punten wint. Shift om te ontwijken.',5);
+ else toast(mode==='explore'?'De teams zoeken elkaar op. Verken de wereld of doe mee aan het gevecht.':mode==='endless'?'Eindeloos: de punten lopen door en er is geen winnaar. Ga naar het menu om te stoppen.':mode==='battle100'?'Eerste team met 100 punten wint. Shift om te ontwijken.':'Eerste team met 15 punten wint. Shift om te ontwijken.',5);
  updateHud();
 }
 function startSurvival(){
@@ -336,7 +336,8 @@ function damage(target,amount,attacker,slow=0){
    if(isLeader(target))toast('De aanvoerder '+target.def.name+' is gevallen! +3 punten',3.5);
    if(attacker.player>=0)toast('KO · '+target.def.name,2);
    if(target.player>=0)toast(target.def.name+' keert over 5 seconden terug.',3);
-   if(mode!=='explore'&&(score.heroes>=15||score.villains>=15))finishMatch();
+   const goal=mode==='battle100'?100:15;
+   if(mode!=='explore'&&mode!=='endless'&&(score.heroes>=goal||score.villains>=goal))finishMatch();
  }
 }
 function area(a,radius,amount,slow=0,knockback=0){
@@ -597,7 +598,7 @@ function updateHud(){
  if($('top-kills')){const top=actors.filter(a=>a.kills>0).sort((x,y)=>y.kills-x.kills).slice(0,3);$('top-kills').innerHTML='<b>TOP 3 KO</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+a.kills;$('top-kills').append(s);});}
  if(state==='menu')return;
  players.forEach((a,i)=>{const bar=$(i?'p2-health-fill':'health-fill'),txt=$(i?'p2-health-text':'health-text');bar.style.width=(a.hp/a.maxHp*100)+'%';txt.textContent=a.dead?(duel?'Ronde afgelopen':'Terug in '+Math.ceil(a.respawn)+' s'):Math.ceil(a.hp)+' / '+a.maxHp;});
- $('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='explore'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
+ $('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='explore'||mode==='endless'||mode==='battle100'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
  const a=players[0];if(a){const span=$('special-button').querySelector('span');span.textContent=a.specialCooldown>0?Math.ceil(a.specialCooldown)+' s':a.def.id==='antman'?(a.nextPym==='grow'?'Groeien':'Krimpen'):a.def.special;$('special-button').disabled=a.dead||a.specialCooldown>0;$('special-button').style.setProperty('--cooldown',Math.min(1,a.specialCooldown/8));}
  const p=players[0];if(p){$('pistol-button').hidden=p.def.id!=='deadpool';$('pistol-button').disabled=p.dead;$('camera-input-hint').textContent=p.def.id==='deadpool'?'Camera: middelste muisknop slepen of J / L':'Camera: rechts of midden slepen, of J / L';$('flight-button').hidden=!FLIERS.has(p.def.id);$('flight-button').querySelector('span').textContent=p.flying?'Landen':'Vliegen';$('descend-button').hidden=!p.flying;const inside=(world.interiors||[]).find(r=>p.group.position.x>r.minX&&p.group.position.x<r.maxX&&p.group.position.z>r.minZ&&p.group.position.z<r.maxZ&&p.group.position.y<(r.ceiling||6));const place=inside?inside.name:worldNames[worldId];$('area-label').textContent=place+(p.flying?' · '+Math.round(p.group.position.y)+' m hoogte':'');if(inside&&currentInterior!==inside.name)toast(inside.name+(worldId==='avengers'?' · verken de ruimtes via de open deuren.':' · loop door de open deur om weer naar buiten te gaan.'),3);currentInterior=inside?.name||'';}
  drawMinimap();
@@ -655,7 +656,7 @@ function frame(){
  const steps=Math.max(1,Math.ceil(dt/.05)),step=dt/steps;
  for(let i=0;i<steps;i++){
   elapsed+=step;
-  if(state==='playing'&&duel)duel.update(step);else if(state==='playing'&&mode==='survival'){if(waveBreak>0){waveBreak-=step;if(waveBreak<=0)nextWave();}}else if(state==='playing'&&mode!=='explore'){matchTime-=step;if(matchTime<=0)finishMatch();}
+  if(state==='playing'&&duel)duel.update(step);else if(state==='playing'&&mode==='survival'){if(waveBreak>0){waveBreak-=step;if(waveBreak<=0)nextWave();}}else if(state==='playing'&&(mode==='battle'||mode==='pvp')){matchTime-=step;if(matchTime<=0)finishMatch();}
   world.update?.(step,elapsed);updateActors(step);updateProjectiles(step);dialogue();
  }
  if($('round-banner')&&elapsed>roundBannerUntil)$('round-banner').hidden=true;
