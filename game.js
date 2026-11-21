@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121211418';
-import {startUpdater} from './update.js?v=20261121211418';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121211418';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121211418';
-import {createWorld} from './world.js?v=20261121211418';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121211418';
-import {createDuel} from './pvp.js?v=20261121211418';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121211418';
-import {updateNPCFlight} from './npc-flight.js?v=20261121211418';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121211418';
+import {music} from './music.js?v=20261121211637';
+import {startUpdater} from './update.js?v=20261121211637';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121211637';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121211637';
+import {createWorld} from './world.js?v=20261121211637';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121211637';
+import {createDuel} from './pvp.js?v=20261121211637';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121211637';
+import {updateNPCFlight} from './npc-flight.js?v=20261121211637';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121211637';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -364,7 +364,7 @@ function damage(target,amount,attacker,slow=0){
      if(!actors.some(a=>a.player<0&&a.active!==false&&!a.dead)&&waveBreak<=0){waveBreak=3;toast('Golf '+wave+' gehaald! Volgende golf komt eraan…',3);}
      return;
    }
-   if(mode!=='explore')score[attacker.def.team]+=isLeader(target)?3:1;
+   score[attacker.def.team]+=isLeader(target)?3:1;
    if(isLeader(target))toast('De aanvoerder '+target.def.name+' is gevallen! +3 punten',3.5);
    if(attacker.player>=0)toast('KO · '+target.def.name,2);
    if(target.player>=0)toast(target.def.name+' keert over 5 seconden terug.',3);
