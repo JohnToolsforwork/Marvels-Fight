@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121205028';
-import {startUpdater} from './update.js?v=20261121205028';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121205028';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121205028';
-import {createWorld} from './world.js?v=20261121205028';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121205028';
-import {createDuel} from './pvp.js?v=20261121205028';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121205028';
-import {updateNPCFlight} from './npc-flight.js?v=20261121205028';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121205028';
+import {music} from './music.js?v=20261121205119';
+import {startUpdater} from './update.js?v=20261121205119';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121205119';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121205119';
+import {createWorld} from './world.js?v=20261121205119';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121205119';
+import {createDuel} from './pvp.js?v=20261121205119';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121205119';
+import {updateNPCFlight} from './npc-flight.js?v=20261121205119';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121205119';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -657,6 +657,7 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('contextmenu',e=>{if(!(e.target instanceof Element&&e.target.closest('select,input,textarea')))e.preventDefault();});
 document.addEventListener('selectstart',e=>{if(!(e.target instanceof Element&&e.target.closest('select,input,textarea')))e.preventDefault();});
 document.addEventListener('dragstart',e=>e.preventDefault());
+document.addEventListener('selectionchange',()=>{const s=getSelection();if(s&&s.rangeCount&&!(document.activeElement&&document.activeElement.closest?.('select,input,textarea')))s.removeAllRanges();});
 window.addEventListener('mousedown',e=>{if(state!=='menu'&&!(e.target instanceof Element&&e.target.closest('select,input,textarea,button'))){e.preventDefault();getSelection()?.removeAllRanges();}},true);
 window.addEventListener('mouseup',()=>{if(state!=='menu')getSelection()?.removeAllRanges();},true);
 canvas.addEventListener('pointerdown',e=>{
