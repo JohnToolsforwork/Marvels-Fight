@@ -205,7 +205,7 @@ export function createCharacter(idOrDef){
   body.scale.set(sx,sy,sx);
   const armored=['ironman','ultron','panther','killmonger','antman','vision','doom'].includes(id);
   const suit=mat(id==='thanos'?'#29354d':def.color,armored?.62:bareMassive?0:.015,armored?.31:.85),accent=mat(def.accent,armored?.62:.12,.42);
-  const exposed=['thor','hulk','widow','hawkeye','strange','wanda','thanos','loki','octopus','redskull','hela','captainmarvel','vision','magneto','electro','abomination','sabretooth'].includes(id);
+  const exposed=['thor','hulk','widow','hawkeye','strange','wanda','thanos','loki','octopus','redskull','hela','captainmarvel','vision','magneto','electro','abomination','sabretooth'].includes(id)||id.startsWith('civilian');
   const face=bareMassive?suit:id==='thanos'?mat('#956eaa',0,.82):id==='redskull'?mat('#c34444',0,.86):id==='vision'?mat('#a74759',.38,.4):id==='electro'?mat('#9b6e50',0,.84):['wanda','hela','loki','captainmarvel'].includes(id)?lightSkin:skin;
   const darkGear=mat('#20272e',.12,.64);
   const bootMat=bareMassive?face:['captain','spiderman','captainmarvel'].includes(id)?red:id==='ironman'?suit:['ultron','doom'].includes(id)?steel:id==='vision'?gold:['goblin','mysterio','magneto','wolverine'].includes(id)?accent:darkGear;
@@ -301,6 +301,7 @@ export function createCharacter(idOrDef){
   }
   const accessories={};
   if(['thor','strange','wanda','widow','loki','hela','octopus','hawkeye'].includes(id))humanHair(head,({thor:'#bca06a',strange:'#373235',wanda:'#874c3b',widow:'#974833',loki:'#1a2024',hela:'#151b1d',octopus:'#64503c',hawkeye:'#5d4a38'})[id],({thor:'long',strange:'temples',wanda:'long',widow:'bob',loki:'sleek',hela:'long',octopus:'short',hawkeye:'quiff'})[id]);
+  if(id.startsWith('civilian'))humanHair(head,def.hair||'#4a3a2a',def.hairStyle||'short');
   if(id==='hulk'){humanHair(head,'#263c2a','quiff');box(head,white,0,-.145,.251,.16,.024,.01);}
   if(id==='spiderman'){
     badge(body,'spider','#151d27',0,1.8,chestZ+.008,.37,.46);

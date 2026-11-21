@@ -1,14 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121211637';
-import {startUpdater} from './update.js?v=20261121211637';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121211637';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121211637';
-import {createWorld} from './world.js?v=20261121211637';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121211637';
-import {createDuel} from './pvp.js?v=20261121211637';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121211637';
-import {updateNPCFlight} from './npc-flight.js?v=20261121211637';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121211637';
+import {music} from './music.js?v=20261121212842';
+import {startUpdater} from './update.js?v=20261121212842';
+import {createCivilians} from './civilians.js?v=20261121212842';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121212842';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121212842';
+import {createWorld} from './world.js?v=20261121212842';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121212842';
+import {createDuel} from './pvp.js?v=20261121212842';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121212842';
+import {updateNPCFlight} from './npc-flight.js?v=20261121212842';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121212842';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -145,7 +146,7 @@ function resetActor(a,spawn){
  a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
- clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);
+ civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);
  if(!actors.length){actors=ROSTER.map(makeActor);for(const a of actors)if(savedSkins[a.def.id])applySkin(a,savedSkins[a.def.id]);}
  const counters={heroes:0,villains:0};for(const a of actors){const s=world.spawns[a.def.team][counters[a.def.team]++];resetActor(a,s);}
  setAtmosphere(id);setupRoomLighting();world.setQuality?.(settings.high);
@@ -220,7 +221,8 @@ async function renderPortraits(){
 }
 function startGame(){
  music.setMood('battle');state='playing';duel=null;currentInterior='';keys.clear();touch.clear();activateAudio();window.speechSynthesis?.cancel();dialogueUntil=0;nextDialogue=elapsed+1.6;score.heroes=score.villains=0;matchTime=180;clearEffects();
- for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.def.team==='heroes'?Math.PI:0});
+ assignSpawns();
+ for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.faceRot??(a.def.team==='heroes'?Math.PI:0)});
  players=[actors.find(a=>a.def.id===selected)];if(mode==='pvp')players.push(actors.find(a=>a.def.id===p2id));
  players.forEach((a,i)=>{a.player=i;a.marker.visible=true;a.marker.material.opacity=.9;a.marker.scale.setScalar(1.15);cameraStates[i].yaw=a.def.team==='heroes'?0:Math.PI;});
  $('menu').hidden=true;$('hud').hidden=false;$('result-modal').hidden=true;$('p2-hud').hidden=mode!=='pvp';$('split-divider').hidden=mode!=='pvp';$('dialogue').hidden=true;
@@ -234,7 +236,37 @@ function startGame(){
    toast('1 tegen 1 · win twee rondes. Shift om te ontwijken.',4);
  }else if(mode==='survival')startSurvival();
  else toast(mode==='explore'?'De teams zoeken elkaar op. Verken de wereld of doe mee aan het gevecht.':mode==='endless'?'Eindeloos: de punten lopen door en er is geen winnaar. Ga naar het menu om te stoppen.':mode==='battle100'?'Eerste team met 100 punten wint. Shift om te ontwijken.':'Eerste team met 15 punten wint. Shift om te ontwijken.',5);
+ if(duel)civ.clear();else civ.spawn(world.bounds.maxX>100?16:6,players.map(p=>({x:p.group.position.x,z:p.group.position.z})));
  updateHud();
+}
+function awardCivilian(a,text){
+ if(!a||a.player<0||duel)return;
+ a.kills=(a.kills||0)+1;koTotal++;score[a.def.team]++;toast(text,2.2);sound('special',.05);
+}
+const civ=createCivilians({scene,createCharacter,updateCharacter,slideMove,blocked,getWorld:()=>world,
+ onRescue:(hero)=>awardCivilian(hero,'Burger gered! +1 KO'),onKill:(a)=>awardCivilian(a,'Burger uitgeschakeld +1 KO'),say:(t)=>toast(t,3)});
+window.__mf={civilians:()=>civ.count};
+function freeNear(x,z,r){
+ for(let ring=0;ring<8;ring++)for(let k=0;k<(ring?12:1);k++){
+  const ang=k/12*Math.PI*2,px=x+Math.cos(ang)*ring*2.2,pz=z+Math.sin(ang)*ring*2.2;
+  if(!blocked(px,pz,r+.3,0,world.colliders,world.bounds))return {x:px,z:pz};
+ }
+ return {x,z};
+}
+// Elk potje beginnen de teams op een andere plek: het midden of een van de vier hoeken.
+function assignSpawns(){
+ const zones=world.spawnZones;for(const a of actors)a.faceRot=undefined;
+ if(!zones||zones.length<2)return;
+ const hi=Math.floor(Math.random()*zones.length);let vi=Math.floor(Math.random()*(zones.length-1));if(vi>=hi)vi++;
+ const place=(team,zone,other)=>{
+  const rot=Math.atan2(other.x-zone.x,other.z-zone.z),fx=Math.sin(rot),fz=Math.cos(rot);let i=0;
+  for(const a of actors){
+   if(a.def.team!==team)continue;
+   const col=(i%5)-2,row=Math.floor(i/5)-1,cx=zone.x+col*3.1*fz-row*4*fx,cz=zone.z-col*3.1*fx+row*4*fz;
+   const p=freeNear(cx,cz,a.radius);a.spawn.set(p.x,0,p.z);a.faceRot=rot;i++;
+  }
+ };
+ place('heroes',zones[hi],zones[vi]);place('villains',zones[vi],zones[hi]);
 }
 function startSurvival(){
  wave=0;waveBreak=0;survKills=0;
@@ -262,7 +294,7 @@ function resetDuelRound({round}){
 }
 function canAct(){return state==='playing'&&(!duel||duel.canAct);}
 function showMenu(){
- music.setMood('calm');koTotal=0;for(const a of actors)a.kills=0;state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
+ civ.clear();music.setMood('calm');koTotal=0;for(const a of actors)a.kills=0;state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
  players=[];for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z});previewCharacter();clearEffects();resize();
 }
 
@@ -336,6 +368,7 @@ function meleeRange(a){return SPECS[a.def.id].range*(a.def.id==='antman'?Math.ma
 function movementModifier(a){return (a.speedBuff>0?1.35:1)*(a.def.id==='antman'&&a.grow>0?.82:1);}
 function attack(a){
  if(!a||a.dead||a.cooldown>0||a.stun>0||!canAct())return;
+ if(a.player>=0&&a.def.team==='villains'&&!duel)civ.tryKill(a,['melee','hammer','tentacle'].includes(SPECS[a.def.id].kind)?4.8:9);
  const spec=SPECS[a.def.id];if(a.player>=0)a.aggro=18;a.cooldown=spec.rate;a.pistolAnim=0;a.pendingPistol=null;a.attackAnim=1;const target=nearestEnemy(a,meleeRange(a)+1);
  if(a.player>=0)sound('shot',.035);
  if(spec.kind==='melee'||spec.kind==='hammer'){
@@ -695,7 +728,7 @@ function frame(){
  for(let i=0;i<steps;i++){
   elapsed+=step;
   if(state==='playing'&&duel)duel.update(step);else if(state==='playing'&&mode==='survival'){if(waveBreak>0){waveBreak-=step;if(waveBreak<=0)nextWave();}}else if(state==='playing'&&(mode==='battle'||mode==='pvp')){matchTime-=step;if(matchTime<=0)finishMatch();}
-  world.update?.(step,elapsed);updateActors(step);updateProjectiles(step);dialogue();
+  world.update?.(step,elapsed);if(state==='playing'&&!duel)civ.update(step,{actors,players});updateActors(step);updateProjectiles(step);dialogue();
  }
  if($('round-banner')&&elapsed>roundBannerUntil)$('round-banner').hidden=true;
  if(elapsed>toastUntil)$('toast').hidden=true;
