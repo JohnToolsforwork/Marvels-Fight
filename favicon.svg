@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Marvels Fight">
+  <title>Marvels Fight</title>
+  <rect width="64" height="64" rx="15" fill="#0b1120"/>
+  <path d="M10 46V18h6l7 12 7-12h6v28h-7V31l-6 10-6-10v15zM40 18h17v7H47v5h9v7h-9v9h-7z" fill="#d4ff45"/>
+</svg>

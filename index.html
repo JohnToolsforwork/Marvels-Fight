@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a101b">
+  <meta name="description" content="Speel Marvels Fight: een gratis 3D-fangame met 30 Marvel-personages. Verken vijf werelden, waaronder Avengers Tower en Kamar-Taj, speel teamstrijd of daag elkaar uit in lokale PvP-duels.">
+  <meta name="robots" content="index,follow">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Marvels Fight — 3D-superheldengame">
+  <meta property="og:description" content="30 personages, 5 werelden en lokale PvP. Kies je held of slechterik en betreed de arena.">
+  <meta property="og:url" content="https://johntoolsforwork.github.io/Marvels-Fight/">
+  <meta property="og:locale" content="nl_NL">
+  <title>Marvels Fight — 3D-game met helden, slechteriken en PvP</title>
+  <link rel="canonical" href="https://johntoolsforwork.github.io/Marvels-Fight/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=6">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Marvels Fight","url":"https://johntoolsforwork.github.io/Marvels-Fight/","description":"Gratis 3D-fangame met dertig Marvel-personages, vijf werelden, teamstrijd en lokale PvP voor twee spelers op hetzelfde apparaat.","inLanguage":"nl","gamePlatform":"Web browser","applicationCategory":"Game","genre":["Action","Adventure"],"playMode":["SinglePlayer","MultiPlayer"],"isAccessibleForFree":true}</script>
+</head>
+<body>
+  <canvas id="game-canvas" aria-label="3D speelwereld"></canvas>
+  <div class="screen-vignette" aria-hidden="true"></div>
+
+  <section id="menu" aria-label="Spel instellen">
+    <div class="menu-panel">
+      <div class="menu-scroll">
+        <header class="menu-header">
+          <div class="brand"><span class="marvel-wordmark">MARVELS</span><span class="brand-title">FIGHT</span></div>
+          <p class="eyebrow">HELDEN. RIVALEN. JOUW AVONTUUR.</p>
+          <h1>Marvels <span>Fight.</span></h1>
+          <p class="intro">30 personages. 5 werelden.<br>Kies je kant. Betreed de arena.</p>
+          <button id="tower-shortcut" class="tower-shortcut" type="button">Nieuw · Avengers Tower binnenlopen</button>
+        </header>
+
+        <section class="selection-section" aria-label="Kies je personage">
+          <div class="section-label"><h2>Jouw team</h2><span>15 tegen 15</span></div>
+          <div class="team-switch" role="group" aria-label="Team kiezen">
+            <button id="hero-team" class="team-tab active" data-team="heroes" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v7c0 5 8 10 8 10s8-5 8-10V5z"/><path class="icon-line" d="m8 12 3 3 5-6"/></svg>Superhelden<span>15</span></button>
+            <button id="villain-team" class="team-tab" data-team="villains" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 9 7-3 11H6L3 9z"/><path class="icon-line" d="m7 10 3 2m7-2-3 2m-4 4h4"/></svg>Slechteriken<span>15</span></button>
+          </div>
+          <div id="roster" class="roster-grid" role="group" aria-label="Personage kiezen"></div>
+          <div class="character-detail">
+            <div class="character-heading"><h3 id="character-name">Spider-Man</h3><span id="character-role">Wendbaar</span></div>
+            <p id="character-description">Kies een personage en ontdek de stad.</p>
+            <div class="character-power"><span class="power-symbol" aria-hidden="true">✦</span><span id="character-power">Webschot</span></div>
+            <div class="character-stats" aria-label="Personage-eigenschappen"><div><span>LEVEN</span><strong id="stat-health">100</strong></div><div><span>SNELHEID</span><strong id="stat-speed">8</strong></div><div><span>KRACHT</span><strong id="stat-power">20</strong></div></div>
+          </div>
+        </section>
+
+        <section class="selection-section" aria-label="Wereld kiezen">
+          <div class="section-label"><h2>De locatie</h2><span>Vrij verkennen</span></div>
+          <div id="world-picker" class="world-picker">
+            <button class="world-card active" data-world="newyork" aria-pressed="true"><span class="world-art city-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="M4 46V23h14v23m4 0V14h17v32m4 0V6h19v40m5 0V19h14v27m4 0V10h18v36m4 0V25h17v21"/><path class="building-spire" d="M52 6V0M94 10V3"/><path class="building-windows" d="M27 20h6m-6 7h6m14-14h11m-11 8h11m-11 8h11m31-11h8m-8 8h8"/></svg></span><span>New York</span><small>3 gebouwen binnen</small></button>
+            <button class="world-card" data-world="wakanda" aria-pressed="false"><span class="world-art wakanda-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="m0 46 28-32 20 22L71 0l26 35 16-17 15 28z"/><path class="building-windows" d="m43 46 28-32 17 32M71 15v31M18 36l10-12 7 10"/><path d="M57 38V27h5v19m17 0V25h5v21"/></svg></span><span>Wakanda</span><small>Stad van vibranium</small></button>
+            <button class="world-card" data-world="asgard" aria-pressed="false"><span class="world-art asgard-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="M13 46V28l7-12 7 12v18m10 0V18l7-14 7 14v28m6 0V11l7-11 7 11v35m6 0V18l7-14 7 14v28m10 0V28l7-12 7 12v18"/><path class="building-windows" d="M22 45h85M64 19v27M43 25v21M84 25v21"/></svg></span><span>Asgard</span><small>Het gouden rijk</small></button>
+            <button class="world-card" data-world="avengers" aria-pressed="false"><span class="world-art avengers-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="M20 46V8h88v38M29 8V2h70v6"/><path class="building-windows" d="M20 18h88M20 31h88M43 8v38M85 8v38M57 42V24h14v18M60 30h8M60 36h8"/></svg></span><span>Avengers Tower</span><small>Speel binnen</small></button>
+            <button class="world-card" data-world="kamartaj" aria-pressed="false"><span class="world-art kamartaj-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="M14 46V29h100v17M8 29l13-8h86l13 8M28 21V13h72v8M21 13l43-13 43 13"/><path class="building-windows" d="M24 34v12M39 34v12M54 34v12M74 34v12M89 34v12M104 34v12M34 17h60"/></svg></span><span>Kamar-Taj</span><small>Tempel &amp; bibliotheek</small></button>
+            <button class="world-card" data-world="titan" aria-pressed="false"><span class="world-art titan-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="m0 46 20-26 14 14 22-30 18 36 16-20 38 26z"/></svg></span><span>Titan</span><small>Verwoeste wereld</small></button>
+            <button class="world-card" data-world="savage" aria-pressed="false"><span class="world-art savage-art" aria-hidden="true"><svg viewBox="0 0 128 46"><path d="m0 46 20-26 14 14 22-30 18 36 16-20 38 26z"/></svg></span><span>Savage Land</span><small>Verborgen jungle</small></button>
+          </div>
+          <p class="world-entry-hint">New York: loop door de verlichte ingangen.</p>
+        </section>
+
+        <section class="selection-section mode-section" aria-label="Spelmodus kiezen">
+          <div class="section-label"><h2>Hoe speel je?</h2></div>
+          <div id="mode-picker" class="mode-picker">
+            <button class="mode-card active" data-mode="explore" aria-pressed="true"><strong>Verkennen</strong><span>Teams vechten zelf</span></button>
+            <button class="mode-card" data-mode="battle" aria-pressed="false"><strong>Teamstrijd</strong><span>15 tegen 15</span></button>
+            <button class="mode-card" data-mode="survival" aria-pressed="false"><strong>Overleven</strong><span>Golven, steeds sterker</span></button>
+            <button class="mode-card" data-mode="pvp" aria-pressed="false"><strong>PvP</strong><span>2 op dit scherm</span></button>
+          </div>
+          <p class="explore-note">Bij Verkennen vechten teams zelfstandig. Jij kunt rondlopen of meedoen.</p>
+          <div id="pvp-setup" hidden>
+            <div class="pvp-format-picker" role="group" aria-label="PvP-spelvorm">
+              <button class="active" data-pvp-format="duel" aria-pressed="true"><strong>Duel · 1 tegen 1</strong><span>Win twee rondes</span></button>
+              <button data-pvp-format="teams" aria-pressed="false"><strong>Teams · 15 tegen 15</strong><span>Met computergestuurde teamgenoten</span></button>
+            </div>
+            <label for="p2-select"><span class="player-badge">P2</span>Tweede speler</label>
+            <select id="p2-select" aria-label="Personage voor speler twee"></select>
+            <p>Twee spelers op dezelfde computer, met een eigen camera. In een duel: 180 leven; Deadpool heeft 240. Aanvalsschade is aangepast voor duels. Tik op Shift om te ontwijken; houd ingedrukt om te sprinten.</p>
+          </div>
+        </section>
+        <details class="about-game">
+          <summary>Over Marvels Fight</summary>
+          <p>Marvels Fight is een gratis 3D-fangame voor je browser. Speel als een van vijftien superhelden of vijftien slechteriken. Verken vijf werelden, vecht in teamstrijd of speel een lokaal duel met twee spelers op één computer.</p>
+          <p>Superhelden: Spider-Man, Iron Man, Captain America, Thor, Hulk, Black Widow, Hawkeye, Doctor Strange, Black Panther, Scarlet Witch, Captain Marvel, Vision, Ant-Man, Wolverine en Deadpool.</p>
+          <p>Slechteriken: Thanos, Loki, Ultron, Green Goblin, Doctor Octopus, Venom, Red Skull, Hela, Killmonger, Mysterio, Magneto, Electro, Abomination, Doctor Doom en Sabretooth.</p>
+          <p>Locaties: New York, Wakanda, Asgard, Avengers Tower en Kamar-Taj. In New York vind je verlichte ingangen. Avengers Tower heeft een speelbaar interieur; Kamar-Taj heeft een tempel en bibliotheek.</p>
+          <p>Ook tijdens Verkennen zoeken computergestuurde helden en slechteriken elkaar op om te vechten. Jij kunt de wereld verkennen of zelf aan de strijd meedoen. Vliegende personages stijgen zelfstandig op en landen weer; grondpersonages vechten lopend.</p>
+          <p>Deadpool slaat met zijn katanas via de linkermuisknop en schiet met zijn pistolen via de rechtermuisknop. Hij heeft 240 leven, ook in duels. Zijn Herstelfactor herstelt 36 leven in 3 seconden en heeft 12 seconden wachttijd. Hij blijft tijdens het herstel kwetsbaar.</p>
+          <p>Ant-Man wisselt met Q tussen klein en snel, en groot en sterk. Zijn grotere vorm heeft meer slagkracht en bereik.</p>
+          <p>Loop naar een personage voor een automatisch gesprek. Kies hoge of lage graphics en gebruik de hulpknop voor de besturing. Dit is een onafhankelijk fanconcept.</p>
+        </details>
+      </div>
+      <footer class="menu-footer">
+        <button id="start-button" class="primary-button"><span class="play-icon" aria-hidden="true"></span>Betreed de stad</button>
+        <div class="menu-footnote"><span>Fanconcept · Marvel-personages</span><a href="https://www.marvel.com/characters" target="_blank" rel="noopener noreferrer">Personages</a></div>
+      </footer>
+    </div>
+    <div class="scene-caption"><div class="scene-tag"><span class="scene-rule"></span><span>JOUW PERSONAGE</span></div><p id="selected-name">Spider-Man</p><div class="scene-features"><span id="selected-special">Webstorm</span><span>Sleep om rond te kijken</span></div><span id="scene-caption" class="scene-location">NEW YORK · MANHATTAN</span></div>
+  </section>
+
+  <nav id="settings" aria-label="Spelinstellingen">
+    <button id="quality-button" title="Schakelen tussen hoge en lage graphics">Graphics: hoog</button>
+    <button id="sound-button" title="Geluid en stemmen aan of uit">Geluid: aan</button>
+    <button id="help-button" class="icon-button" aria-label="Besturing bekijken" title="Besturing bekijken">?</button>
+    <button id="fullscreen-button" class="icon-button" aria-label="Volledig scherm" title="Volledig scherm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg></button>
+  </nav>
+
+  <main id="hud" hidden aria-label="Spelinformatie">
+    <div id="ko-counter" aria-live="polite">KO: 0</div>
+    <div id="top-kills" aria-label="Top 3 met de meeste KO"></div>
+    <section class="player-hud" aria-label="Jouw personage">
+      <div class="player-hud-top"><span class="player-badge">P1</span><h2 id="player-name">Spider-Man</h2></div>
+      <p id="player-power">Webschot</p>
+      <div class="health-track"><div id="health-fill" class="health-fill"></div></div>
+      <span id="health-text" class="health-text">100 / 100</span>
+    </section>
+    <section id="p2-hud" class="player-hud second-player" hidden aria-label="Speler twee">
+      <div class="player-hud-top"><span class="player-badge">P2</span><h2 id="p2-name">Thanos</h2></div>
+      <div class="health-track"><div id="p2-health-fill" class="health-fill"></div></div>
+      <span id="p2-health-text" class="health-text">100 / 100</span>
+    </section>
+    <section class="match-hud" aria-label="Wedstrijdstand">
+      <div id="mode-label" class="match-mode">VRIJ VERKENNEN</div>
+      <div class="score-row"><span class="score-hero"><small>HELDEN</small><strong id="score-heroes">0</strong></span><span id="match-timer">∞</span><span class="score-villain"><strong id="score-villains">0</strong><small>SLECHTERIKEN</small></span></div>
+    </section>
+    <button id="exit-button" class="menu-return"><kbd>ESC</kbd>Menu</button>
+    <div id="split-divider" hidden aria-hidden="true"><span>P1</span><span>P2</span></div>
+    <div class="camera-controls" aria-label="Camera draaien"><button id="camera-left" title="Camera links draaien (J)"><kbd>J</kbd> Links draaien</button><button id="camera-right" title="Camera rechts draaien (L)"><kbd>L</kbd> Rechts draaien</button></div>
+    <div id="area-label" class="area-label">NEW YORK</div>
+    <div class="ability-dock">
+      <div class="ability-buttons"><button id="attack-button" title="Aanvallen met de linkermuisknop"><kbd>Linkermuisklik</kbd><span>Aanval</span></button><button id="pistol-button" hidden title="Deadpool: schieten met de rechtermuisknop" aria-label="Deadpool: pistolen afvuren"><kbd>Rechtermuisklik</kbd><span>Schiet</span></button><button id="special-button" class="special-ability"><kbd>Q</kbd><span>Superkracht</span></button><button id="dash-button"><kbd>Shift</kbd><span>Ontwijk / sprint</span></button><button id="flight-button" hidden><kbd>F</kbd><span>Vliegen</span></button><button id="descend-button" hidden><kbd>C</kbd><span>Dalen</span></button></div>
+      <p class="movement-hint"><span><kbd>WASD</kbd> bewegen</span><span><kbd>Spatie</kbd> springen</span><span id="camera-input-hint">Camera: middelste muisknop slepen of J / L</span></p>
+    </div>
+    <div class="minimap-panel"><canvas id="minimap" width="160" height="160" aria-label="Plattegrond van de speelwereld"></canvas><div class="map-caption"><span>OMGEVING</span><span>N</span></div></div>
+    <div id="touch-controls" aria-label="Aanraakbesturing"><div class="touch-dpad"><button id="touch-up" aria-label="Vooruit">▲</button><button id="touch-left" aria-label="Links">◀</button><button id="touch-down" aria-label="Achteruit">▼</button><button id="touch-right" aria-label="Rechts">▶</button></div><button id="touch-jump">Spring</button></div>
+  </main>
+
+  <aside id="dialogue" hidden aria-live="polite"><div id="dialogue-avatar" aria-hidden="true">❝</div><div><div class="dialogue-heading"><strong id="dialogue-speaker">Spider-Man</strong><span>IN JE BUURT</span></div><p id="dialogue-line"></p></div></aside>
+  <div id="toast" hidden role="status"></div>
+  <div id="round-banner" hidden role="status" aria-live="polite"></div>
+
+  <section id="help-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="modal-card help-card"><button id="close-help" class="close-button" aria-label="Besturing sluiten">×</button><p class="eyebrow">ALLES BIJ DE HAND</p><h2 id="help-title">De besturing.</h2><p class="modal-intro">Loop naar iemand toe. Het gesprek begint vanzelf.</p>
+      <div class="help-columns"><section><h3><span class="player-badge">P1</span>Speler één</h3><dl><div><dt>Bewegen</dt><dd><kbd>W A S D</kbd></dd></div><div><dt>Springen</dt><dd><kbd>Spatie</kbd></dd></div><div><dt>Aanvallen</dt><dd><kbd>Linkermuisknop</kbd></dd></div><div><dt>Deadpool: pistolen</dt><dd><kbd>Rechtermuisknop</kbd></dd></div><div><dt>Superkracht</dt><dd><kbd>Q</kbd></dd></div><div><dt>Ontwijken / sprinten</dt><dd><kbd>Linker Shift</kbd></dd></div><div><dt>Camera draaien</dt><dd>Middelste muisknop slepen · J/L draaien · I/K kantelen</dd></div></dl></section><section><h3><span class="player-badge">P2</span>Speler twee · PvP</h3><dl><div><dt>Bewegen</dt><dd><kbd>Pijltjestoetsen</kbd></dd></div><div><dt>Springen</dt><dd><kbd>Rechter Ctrl</kbd></dd></div><div><dt>Aanvallen</dt><dd><kbd>Enter</kbd></dd></div><div><dt>Deadpool: pistolen</dt><dd><kbd>Numpad 2</kbd></dd></div><div><dt>Superkracht</dt><dd><kbd>/</kbd></dd></div><div><dt>Ontwijken / sprinten</dt><dd><kbd>Rechter Shift</kbd></dd></div></dl></section></div><p class="help-note">Vliegende personages: <kbd>F</kbd> opstijgen/landen, <kbd>Spatie</kbd> stijgen en <kbd>C</kbd> dalen. Speler 2 draait de camera met <kbd>Numpad 4 / 6</kbd>. Vliegen: <kbd>Numpad 0</kbd>, <kbd>Rechter Ctrl</kbd> en <kbd>Numpad 1</kbd>. In New York kun je door de verlichte ingangen van Avengers Tower, het Sanctum en Daily Bugle lopen. Kies ook Avengers Tower of Kamar-Taj in het locatiemenu.</p><p class="help-note"><kbd>Esc</kbd> opent het menu. Verlaag de graphics voor meer snelheid op een minder krachtige computer.</p>
+    </div>
+  </section>
+
+  <section id="result-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="modal-card result-card"><div class="victory-mark" aria-hidden="true">✦</div><p class="eyebrow">MARVELS FIGHT</p><h2 id="result-title">Overwinning!</h2><p id="result-detail">De arena is van jouw team.</p><button id="rematch-button" class="primary-button">Opnieuw spelen</button><button id="result-menu-button" class="secondary-button">Terug naar het menu</button></div></section>
+
+  <div id="loading" role="status"><div class="loading-brand"><span class="marvel-wordmark">MARVELS</span><span>FIGHT</span></div><div class="loading-track"><i></i></div><p id="loading-text">De wereld wordt opgebouwd…</p></div>
+  <div id="fatal" hidden role="alert"></div>
+  <noscript><div class="noscript">Schakel JavaScript in om deze 3D-game te spelen.</div></noscript>
+  <script type="module" src="game.js?v=9"></script>
+</html>
