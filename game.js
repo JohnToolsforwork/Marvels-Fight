@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121204642';
-import {startUpdater} from './update.js?v=20261121204642';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204642';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121204642';
-import {createWorld} from './world.js?v=20261121204642';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204642';
-import {createDuel} from './pvp.js?v=20261121204642';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204642';
-import {updateNPCFlight} from './npc-flight.js?v=20261121204642';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204642';
+import {music} from './music.js?v=20261121204858';
+import {startUpdater} from './update.js?v=20261121204858';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204858';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121204858';
+import {createWorld} from './world.js?v=20261121204858';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204858';
+import {createDuel} from './pvp.js?v=20261121204858';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204858';
+import {updateNPCFlight} from './npc-flight.js?v=20261121204858';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204858';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -657,6 +657,8 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('contextmenu',e=>{if(!(e.target instanceof Element&&e.target.closest('select,input,textarea')))e.preventDefault();});
 document.addEventListener('selectstart',e=>{if(!(e.target instanceof Element&&e.target.closest('select,input,textarea')))e.preventDefault();});
 document.addEventListener('dragstart',e=>e.preventDefault());
+window.addEventListener('mousedown',e=>{if(state!=='menu'&&!(e.target instanceof Element&&e.target.closest('select,input,textarea,button'))){e.preventDefault();getSelection()?.removeAllRanges();}},true);
+window.addEventListener('mouseup',()=>{if(state!=='menu')getSelection()?.removeAllRanges();},true);
 canvas.addEventListener('pointerdown',e=>{
  const pistolClick=state==='playing'&&players[0]?.def.id==='deadpool'&&e.button===2;
  if(pistolClick){e.preventDefault();keys.add('Mouse2');firePistol(players[0]);canvas.setPointerCapture(e.pointerId);}
@@ -668,7 +670,7 @@ canvas.addEventListener('pointercancel',()=>{keys.delete('Mouse0');keys.delete('
 canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault();});
 window.addEventListener('pointermove',e=>{
  if(dragging){const dx=e.clientX-lastPointer.x,dy=e.clientY-lastPointer.y;if(state==='menu')menuOrbit-=dx*.006;else {cameraStates[0].yaw-=dx*.006;cameraStates[0].pitch=clamp(cameraStates[0].pitch+dy*.003,.1,.9);}lastPointer={x:e.clientX,y:e.clientY};}
- if(state==='playing'&&e.target===canvas){const w=mode==='pvp'?width/2:width;pointer.set(e.clientX/w*2-1,-e.clientY/height*2+1);raycaster.setFromCamera(pointer,cameras[0]);if(raycaster.ray.intersectPlane(groundPlane,aimPoint))pointerKnown=true;}
+ if(state==='playing'&&e.target===canvas){const w=mode==='pvp'?width/2:width;pointer.set(e.clientX/w*2-1,-e.clientY/height*2+1);raycaster.setFromCamera(pointer,cameras[0]);if(raycaster.ray.direction.y<-.02&&raycaster.ray.intersectPlane(groundPlane,aimPoint)){const me=players[0];if(me){const dx=aimPoint.x-me.group.position.x,dz=aimPoint.z-me.group.position.z,d=Math.hypot(dx,dz);if(d>45){aimPoint.x=me.group.position.x+dx/d*45;aimPoint.z=me.group.position.z+dz/d*45;}}pointerKnown=true;}}
 });
 canvas.addEventListener('wheel',e=>{if(state!=='playing')return;e.preventDefault();cameraStates[0].distance=clamp(cameraStates[0].distance+e.deltaY*.008,4.5,18);},{passive:false});
 for(const direction of ['up','down','left','right']){
