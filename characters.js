@@ -208,8 +208,10 @@ export function createCharacter(idOrDef){
   const legs=[],arms=[],hands=[],fingers=[],knees=[];
   for(const side of [-1,1]){
     const leg=group(body,side*(slenderSpider?.157:feminine?.175:.19),1.22,0);legs.push(leg);
+    oval(leg,legMat,0,.02,0,.168*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.15*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.168*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     mesh(geo.upperLimb,legMat,leg,0,-.275,0,slenderSpider?.138:feminine?.143:chunky?.185:.16,.325,slenderSpider?.144:feminine?.15:.17);
     const knee=group(leg,0,-.56,0);knees.push(knee);
+    oval(knee,bareMassive?face:legMat,0,0,0,.128*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.128*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.13*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     mesh(geo.lowerLimb,bareMassive?face:legMat,knee,0,-.225,-.008,slenderSpider?.117:feminine?.117:chunky?.152:.133,.285,slenderSpider?.127:.137);
     const foot=mesh(geo.boot,bootMat,knee,0,-.52,.06,slenderSpider?.14:feminine?.137:chunky?.18:.155,.14,slenderSpider?.23:chunky?.26:.235);foot.name='Shaped boot';
     if(!bareMassive){
@@ -218,12 +220,15 @@ export function createCharacter(idOrDef){
     }
     const shoulderX=slenderSpider?.38:feminine?.385:bodyProfile==='agile'?.425:chunky?.505:.46;
     const arm=group(body,side*shoulderX,2.005,0);arms.push(arm);
+    oval(body,suit,side*shoulderX*.74,2.0,0,.2*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.15*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.17*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     oval(arm,suit,0,-.055,0,slenderSpider?.131:feminine?.132:chunky?.185:.153,slenderSpider?.15:.165,slenderSpider?.129:feminine?.13:.155);
     mesh(geo.upperLimb,bareMassive?face:suit,arm,0,-.26,-.008,slenderSpider?.102:feminine?.108:chunky?.15:.12,.232,slenderSpider?.107:feminine?.105:.125);
     const elbow=group(arm,0,-.45,0);arm.userData.elbow=elbow;
+    oval(elbow,bareMassive?face:suit,0,.005,.005,.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     mesh(geo.lowerLimb,bareMassive?face:suit,elbow,0,-.16,.01,slenderSpider?.093:feminine?.095:chunky?.13:.107,.205,slenderSpider?.097:feminine?.095:.11);
     mesh(geo.gauntlet,bareMassive?face:gloveMat,elbow,0,-.3,.015,slenderSpider?.099:feminine?.10:chunky?.133:.112,.075,slenderSpider?.102:.115);
     const hand=group(elbow,0,-.41,.025);hands.push(hand);
+    oval(elbow,bareMassive?face:gloveMat,0,-.385,.02,.088*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.075*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.088*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     if(slenderSpider)hand.scale.set(.91,.95,.94);
     oval(hand,handMat,0,-.01,0,feminine?.085:chunky?.115:.096,.108,.056);
     // Four separate fingers plus an opposing thumb, each with a distal joint.
@@ -565,6 +570,10 @@ export function createCharacter(idOrDef){
   accessories.magic?.forEach(m=>{m.userData.baseScale=m.scale.clone();});
   for(const key of ['photonGlow','electricGlow','doomGlow'])accessories[key]?.forEach(m=>{m.userData.baseScale=m.scale.clone();});
   if(accessories.foreheadGem)accessories.foreheadGem.userData.baseScale=accessories.foreheadGem.scale.clone();
+  const INK=inkMaterial();
+  const inkGeos=new Set([...Object.values(bodyGeometries),geo.hips,geo.upperLimb,geo.lowerLimb,geo.boot,geo.maleFace,geo.femaleFace,geo.titanFace,geo.gauntlet,geo.neck].filter(Boolean));
+  const inkTargets=[];root.traverse(o=>{if(o.isMesh&&inkGeos.has(o.geometry)&&!o.userData.ink)inkTargets.push(o);});
+  for(const o of inkTargets){const ink=new THREE.Mesh(o.geometry,INK);ink.scale.setScalar(1.045);ink.userData.ink=true;ink.castShadow=false;ink.receiveShadow=false;o.add(ink);}
   const rig={group:root,body,head,eyes,lids,arms,legs,knees,hands,fingers,accessories,def,height:(slenderSpider?2.72:2.82)*sy,jaw,bodyProfile,hasFacialHair,agilePosture:slenderSpider,phase:ROSTER.indexOf(def)*1.37,walk:0,high:true};
   rig.motion={move:0,flight:0,talk:0,speed:0,mouth:.0085};
   const poseNodes=[body,head,...arms,...arms.map(a=>a.userData.elbow),...hands,...legs,...knees,...fingers.flatMap(f=>[f.base,f.tip]),...(accessories.cape?[accessories.cape]:[])];
@@ -572,7 +581,8 @@ export function createCharacter(idOrDef){
   root.userData.rig=rig;return rig;
 }
 
-export function setQuality(rig,high){rig.high=!!high;rig.group.traverse(o=>{if(o.isMesh)o.castShadow=!!high;});}
+let inkMat=null;function inkMaterial(){return inkMat??=new THREE.MeshBasicMaterial({color:'#0a0e16',side:THREE.BackSide});}
+export function setQuality(rig,high){rig.high=!!high;rig.group.traverse(o=>{if(o.isMesh){if(o.userData.ink)o.visible=!!high;else o.castShadow=!!high;}});}
 
 export function updateCharacter(rig,dt,opts={}){
   const t=opts.time??performance.now()/1000;

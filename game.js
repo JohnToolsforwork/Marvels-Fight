@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import {music} from './music.js?v=1';
-import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=6';
+import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=7';
 import {SoftwareRenderer} from './software-renderer.js?v=6';
 import {createWorld} from './world.js?v=5';
 import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=3';
