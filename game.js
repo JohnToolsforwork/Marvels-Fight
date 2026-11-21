@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121233916';
-import {startUpdater} from './update.js?v=20261121233916';
-import {createCivilians} from './civilians.js?v=20261121233916';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121233916';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121233916';
-import {createWorld} from './world.js?v=20261121233916';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121233916';
-import {createDuel} from './pvp.js?v=20261121233916';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121233916';
-import {updateNPCFlight} from './npc-flight.js?v=20261121233916';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121233916';
+import {music} from './music.js?v=20261121234237';
+import {startUpdater} from './update.js?v=20261121234237';
+import {createCivilians} from './civilians.js?v=20261121234237';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121234237';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121234237';
+import {createWorld} from './world.js?v=20261121234237';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121234237';
+import {createDuel} from './pvp.js?v=20261121234237';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121234237';
+import {updateNPCFlight} from './npc-flight.js?v=20261121234237';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121234237';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -148,7 +148,7 @@ function resetActor(a,spawn){
  a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
- civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds,2.5,Math.max(3,Math.round((world.bounds.maxX-world.bounds.minX)/290)));camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
+ civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);{const cell=Math.max(3,Math.round((world.bounds.maxX-world.bounds.minX)/290));nav=makeNavigator(world.colliders,world.bounds,2.5,cell,cell>3?2.2:.9);}camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
  if(!actors.length){actors=ROSTER.map(makeActor);for(const a of actors)if(savedSkins[a.def.id])applySkin(a,savedSkins[a.def.id]);}
  const counters={heroes:0,villains:0};for(const a of actors){const s=world.spawns[a.def.team][counters[a.def.team]++];resetActor(a,s);}
  setAtmosphere(id);setupRoomLighting();world.setQuality?.(settings.high);
@@ -703,7 +703,7 @@ function controlActor(a,index,dt){
 function steerAround(a,d){
  const p=a.group.position,h=bodyHeight(a);let sx=0,sz=0;
  for(const b of actors){
-  if(b===a||b.dead||b.active===false||Math.abs(p.y-b.group.position.y)>2)continue;
+  if(b===a||b.dead||b.active===false||Math.abs(p.y-b.group.position.y)>2||elapsed<(a.noSepUntil||0))continue;
   const dx=p.x-b.group.position.x,dz=p.z-b.group.position.z,dist=Math.hypot(dx,dz),min=(a.radius+b.radius)*1.55+.7;
   if(dist>=min||dist<.001)continue;
   const w=(min-dist)/min;sx+=dx/dist*w;sz+=dz/dist*w;
@@ -730,7 +730,13 @@ function followPath(a,target,speed,dt){
  const p=a.group.position;a.stuckT=(a.stuckT||0)+dt;
  if(a.stuckT>.7){
   const moved=Math.hypot(p.x-(a.stuckX??p.x),p.z-(a.stuckZ??p.z));
-  if(moved<.4){a.avoidSide=-(a.avoidSide||1);a.pathAge=0;const side=a.avoidSide;a.path=[{x:p.x-d.z*side*6,z:p.z+d.x*side*6}];}
+  if(moved<.4){
+   a.stuckN=(a.stuckN||0)+1;a.avoidSide=-(a.avoidSide||1);a.pathAge=0;const side=a.avoidSide;a.path=[{x:p.x-d.z*side*6,z:p.z+d.x*side*6}];
+   if(a.stuckN>=2){ // echt vast: loop een flink stuk een andere kant op en negeer even de anderen
+    a.stuckN=0;a.noSepUntil=elapsed+2.5;(a.blacklist??=new Map());
+    for(let i=0;i<16;i++){const ang=Math.random()*Math.PI*2,dd=18+Math.random()*18,x=p.x+Math.cos(ang)*dd,z=p.z+Math.sin(ang)*dd;if(!blocked(x,z,a.radius+1,0,world.colliders,world.bounds)){a.detour={x,z,until:elapsed+8};break;}}
+   }
+  }else a.stuckN=0;
   a.stuckX=p.x;a.stuckZ=p.z;a.stuckT=0;
  }
  const blend=1-Math.exp(-dt*11);a.moveVelocity.x=THREE.MathUtils.lerp(a.moveVelocity.x,d.x*speed,blend);a.moveVelocity.z=THREE.MathUtils.lerp(a.moveVelocity.z,d.z*speed,blend);const movement=speed*dt;let moved=slideMove(a.group.position,a.moveVelocity.x*dt,a.moveVelocity.z*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));

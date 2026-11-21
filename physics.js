@@ -34,7 +34,7 @@ export function segmentBox(a,b,box,padding=0){
   return low;
 }
 export function clearSight(a,b,boxes,padding=0){return !boxes.some(box=>segmentBox(a,b,box,padding)!==false);}
-export function makeNavigator(boxes,bounds,actorHeight=2.5,cell=3){
+export function makeNavigator(boxes,bounds,actorHeight=2.5,cell=3,margin=.75){
   const nx=Math.floor((bounds.maxX-bounds.minX)/cell),nz=Math.floor((bounds.maxZ-bounds.minZ)/cell);
   // The direct-route shortcut must obey the same grounded obstacle threshold
   // as movement; eye-level visibility would ignore low but solid barriers.
@@ -43,7 +43,7 @@ export function makeNavigator(boxes,bounds,actorHeight=2.5,cell=3){
   const grid=new Uint8Array(nx*nz);
   // Markeer geblokkeerde cellen per obstakel (snel, ook voor zeer grote kaarten).
   {
-    const R=.75;
+    const R=margin;
     for(let ix=0;ix<nx;ix++)for(const iz of [0,nz-1])grid[iz*nx+ix]=1;
     for(let iz=0;iz<nz;iz++)for(const ix of [0,nx-1])grid[iz*nx+ix]=1;
     for(const b of boxes){
