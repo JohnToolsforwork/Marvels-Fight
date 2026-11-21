@@ -203,7 +203,9 @@ export function createCharacter(idOrDef){
   const beltMat=bareMassive?accent:['ironman','ultron','venom','spiderman','panther','killmonger'].includes(id)?suit:darkGear;
   const belt=box(body,beltMat,0,1.235,.02,slenderSpider?.47:feminine?.49:.57,.062,slenderSpider?.335:.39);belt.name='Waist belt';
   if(!['hulk','abomination','venom','spiderman','ironman','ultron'].includes(id))box(body,['loki','thanos','killmonger','mysterio','captainmarvel','vision','doom'].includes(id)?gold:steel,0,1.235,.222,.095,.073,.024);
-  mesh(geo.neck,exposed?face:suit,body,0,2.17,0,slenderSpider?.89:1,1,slenderSpider?.89:1);
+  mesh(geo.neck,exposed?face:suit,body,0,2.17,0,(slenderSpider?.89:1)*1.12,1.05,(slenderSpider?.89:1)*1.12);
+  oval(body,suit,0,1.3,0,(slenderSpider?.2:feminine?.2:chunky?.34:.27),.14,(slenderSpider?.15:chunky?.24:.19));
+  oval(body,exposed?face:suit,0,2.12,0,(slenderSpider?.16:.19)*(chunky?1.3:1),.1,(slenderSpider?.15:.17)*(chunky?1.3:1));
   const chestZ=slenderSpider?.231:feminine?.242:bodyProfile==='agile'?.262:.284;
   const legs=[],arms=[],hands=[],fingers=[],knees=[];
   for(const side of [-1,1]){
@@ -213,12 +215,13 @@ export function createCharacter(idOrDef){
     const knee=group(leg,0,-.56,0);knees.push(knee);
     oval(knee,bareMassive?face:legMat,0,0,0,.128*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.128*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.13*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     mesh(geo.lowerLimb,bareMassive?face:legMat,knee,0,-.225,-.008,slenderSpider?.117:feminine?.117:chunky?.152:.133,.285,slenderSpider?.127:.137);
+    oval(knee,bootMat,0,-.5,.02,.125*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.14*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     const foot=mesh(geo.boot,bootMat,knee,0,-.52,.06,slenderSpider?.14:feminine?.137:chunky?.18:.155,.14,slenderSpider?.23:chunky?.26:.235);foot.name='Shaped boot';
     if(!bareMassive){
       const sole=box(knee,darkGear,0,-.64,.079,slenderSpider?.26:feminine?.245:.285,.032,slenderSpider?.4:.42);sole.name='Boot sole';
       const shin=mesh(geo.gauntlet,bootMat,knee,0,-.32,.008,slenderSpider?.124:feminine?.122:.14,.18,slenderSpider?.132:.145);shin.name='Boot upper';
     }
-    const shoulderX=slenderSpider?.38:feminine?.385:bodyProfile==='agile'?.425:chunky?.505:.46;
+    const shoulderX=(slenderSpider?.38:feminine?.385:bodyProfile==='agile'?.425:chunky?.505:.46)*.92;
     const arm=group(body,side*shoulderX,2.005,0);arms.push(arm);
     oval(body,suit,side*shoulderX*.74,2.0,0,.2*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.15*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.17*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     oval(arm,suit,0,-.055,0,slenderSpider?.131:feminine?.132:chunky?.185:.153,slenderSpider?.15:.165,slenderSpider?.129:feminine?.13:.155);
