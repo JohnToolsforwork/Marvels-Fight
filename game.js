@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121225659';
-import {startUpdater} from './update.js?v=20261121225659';
-import {createCivilians} from './civilians.js?v=20261121225659';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121225659';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121225659';
-import {createWorld} from './world.js?v=20261121225659';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121225659';
-import {createDuel} from './pvp.js?v=20261121225659';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121225659';
-import {updateNPCFlight} from './npc-flight.js?v=20261121225659';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121225659';
+import {music} from './music.js?v=20261121230317';
+import {startUpdater} from './update.js?v=20261121230317';
+import {createCivilians} from './civilians.js?v=20261121230317';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121230317';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121230317';
+import {createWorld} from './world.js?v=20261121230317';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121230317';
+import {createDuel} from './pvp.js?v=20261121230317';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121230317';
+import {updateNPCFlight} from './npc-flight.js?v=20261121230317';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121230317';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -32,7 +32,7 @@ const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 // Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
 const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
-let spectating=false,specIndex=0,pistolMode=false;
+let spectating=false,specIndex=0,pistolMode=false,camColliders=[];
 let cutUntil=0,cutStart=0,cutLines=[],cutCb=null,cutIdx=-1,storyIndex=0,story=null;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
 let width=innerWidth,height=innerHeight,world,nav,worldId='newyork',team='heroes',selected='deadpool',p2id='sabretooth',mode='explore',koTotal=0,wave=0,waveBreak=0,survKills=0,state='menu',elapsed=0,matchTime=180,frameCount=0;
@@ -148,7 +148,7 @@ function resetActor(a,spawn){
  a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
- civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);
+ civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
  if(!actors.length){actors=ROSTER.map(makeActor);for(const a of actors)if(savedSkins[a.def.id])applySkin(a,savedSkins[a.def.id]);}
  const counters={heroes:0,villains:0};for(const a of actors){const s=world.spawns[a.def.team][counters[a.def.team]++];resetActor(a,s);}
  setAtmosphere(id);setupRoomLighting();world.setQuality?.(settings.high);
@@ -821,10 +821,17 @@ function dialogue(){
 }
 function updateCamera(index,dt,snap=false){
  const a=(spectating&&index===0)?spectTarget():players[index];if(!a)return;const s=cameraStates[index],p=a.group.position,characterHeight=(a.rig.height||2.82)*a.group.scale.y;
- const look=new THREE.Vector3(p.x,p.y+Math.max(.75,characterHeight*.58),p.z),desired=look.clone().add(new THREE.Vector3(Math.sin(s.yaw)*s.distance,Math.sin(s.pitch)*s.distance+1.1,Math.cos(s.yaw)*s.distance)),c=cameras[index];
- const pos=resolveThirdPersonCamera({look,desired,yaw:s.yaw,pitch:s.pitch,distance:s.distance,characterHeight,colliders:world.colliders,previous:snap?null:c.position});
- if(snap)c.position.copy(pos);else c.position.lerp(pos,1-Math.exp(-dt*10));
- if(!isThirdPersonCameraSafe(look,c.position,world.colliders,characterHeight))c.position.copy(pos);
+ // Zachte draaibeweging: de weergavehoek loopt vloeiend achter op de gewenste hoek aan.
+ if(s.vyaw===undefined||snap){s.vyaw=s.yaw;s.vpitch=s.pitch;}
+ else{
+  let dy=s.yaw-s.vyaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));
+  const k=1-Math.exp(-dt*14);s.vyaw+=dy*k;s.vpitch+=(s.pitch-s.vpitch)*k;
+ }
+ const look=new THREE.Vector3(p.x,p.y+Math.max(.75,characterHeight*.58),p.z),desired=look.clone().add(new THREE.Vector3(Math.sin(s.vyaw)*s.distance,Math.sin(s.vpitch)*s.distance+1.1,Math.cos(s.vyaw)*s.distance)),c=cameras[index];
+ // De onzichtbare kaartrand telt niet mee als camera-obstakel, anders springt de camera bij de rand.
+ const pos=resolveThirdPersonCamera({look,desired,yaw:s.vyaw,pitch:s.vpitch,distance:s.distance,characterHeight,colliders:camColliders,previous:snap?null:c.position});
+ if(snap)c.position.copy(pos);else c.position.lerp(pos,1-Math.exp(-dt*12));
+ if(!isThirdPersonCameraSafe(look,c.position,camColliders,characterHeight))c.position.lerp(pos,.6);
  c.lookAt(look);
 }
 function updateLabels(){
