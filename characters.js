@@ -251,6 +251,14 @@ export function createCharacter(idOrDef){
   const headGeometry=['thanos','abomination'].includes(id)?geo.titanFace:feminine?geo.femaleFace:geo.maleFace;
   const headMesh=mesh(headGeometry,headMat,head);headMesh.name='Sculpted face';
   const eyes=[],lids=[];
+  const maskedFace=['spiderman','ironman','panther','killmonger','venom','ultron','goblin','antman','wolverine','doom','electro','deadpool','vision','mysterio'].includes(id);
+  if(!maskedFace){
+    const noseMat=headMat;
+    oval(head,noseMat,0,-.03,.285,.036,.05,.044).name='Nose';
+    const mouthMat=mat('#7a3b3b',0,.8);
+    box(head,mouthMat,0,-.125,.262,.1,.011,.02).name='Mouth line';
+    if(id==='thanos'){oval(head,headMat,0,-.215,.215,.13,.085,.1);box(head,mat('#6d4a82',0,.8),0,-.1,.275,.16,.008,.015);}
+  }
   const lens=['spiderman','ironman','panther','killmonger','venom','ultron','goblin','antman','wolverine','doom','electro','deadpool'].includes(id);
   const eyeMat=mat(['ultron','antman'].includes(id)?'#ff4453':['goblin','electro'].includes(id)?'#fee381':'#edf5f6',.06,.23,lens?(['ultron','antman'].includes(id)?'#ff2233':id==='ironman'?'#7ce8ff':id==='doom'?'#5bcf91':id==='electro'?'#f3d568':null):null);
   for(const side of [-1,1]){
