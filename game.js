@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121215741';
-import {startUpdater} from './update.js?v=20261121215741';
-import {createCivilians} from './civilians.js?v=20261121215741';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121215741';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121215741';
-import {createWorld} from './world.js?v=20261121215741';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121215741';
-import {createDuel} from './pvp.js?v=20261121215741';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121215741';
-import {updateNPCFlight} from './npc-flight.js?v=20261121215741';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121215741';
+import {music} from './music.js?v=20261121225143';
+import {startUpdater} from './update.js?v=20261121225143';
+import {createCivilians} from './civilians.js?v=20261121225143';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121225143';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121225143';
+import {createWorld} from './world.js?v=20261121225143';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121225143';
+import {createDuel} from './pvp.js?v=20261121225143';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121225143';
+import {updateNPCFlight} from './npc-flight.js?v=20261121225143';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121225143';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -32,6 +32,7 @@ const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 // Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
 const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
+let spectating=false,specIndex=0;
 let cutUntil=0,cutStart=0,cutLines=[],cutCb=null,cutIdx=-1,storyIndex=0,story=null;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
 let width=innerWidth,height=innerHeight,world,nav,worldId='newyork',team='heroes',selected='deadpool',p2id='sabretooth',mode='explore',koTotal=0,wave=0,waveBreak=0,survKills=0,state='menu',elapsed=0,matchTime=180,frameCount=0;
@@ -221,6 +222,7 @@ async function renderPortraits(){
  r.dispose();r.forceContextLoss();
 }
 function startGame(){
+ spectating=false;specIndex=0;if($('spectate'))$('spectate').hidden=true;
  if(mode==='story')prepareStory();
  $('rematch-button').textContent='Opnieuw spelen';if($('objective'))$('objective').hidden=true;civ.autoHelp=mode!=='story';
  music.setMood('battle');state='playing';duel=null;currentInterior='';keys.clear();touch.clear();activateAudio();window.speechSynthesis?.cancel();dialogueUntil=0;nextDialogue=elapsed+1.6;score.heroes=score.villains=0;matchTime=180;clearEffects();
@@ -230,7 +232,7 @@ function startGame(){
  players.forEach((a,i)=>{a.player=i;a.marker.visible=true;a.marker.material.opacity=.9;a.marker.scale.setScalar(1.15);cameraStates[i].yaw=a.def.team==='heroes'?0:Math.PI;});
  $('menu').hidden=true;$('hud').hidden=false;$('result-modal').hidden=true;$('p2-hud').hidden=mode!=='pvp';$('split-divider').hidden=mode!=='pvp';$('dialogue').hidden=true;
  $('player-name').textContent=players[0].def.name;$('player-power').textContent=players[0].def.power;$('p2-name').textContent=players[1]?.def.name||'';
- $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?'VERHAAL · HOOFDSTUK '+((storyIndex%CHAPTERS.length)+1):mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
+ $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?'VERHAAL · HOOFDSTUK '+((storyIndex%CHAPTERS.length)+1):mode==='deathbattle'?'DEATH BATTLE · LAATSTE TEAM OVER':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
  if($('scene-caption'))$('scene-caption').hidden=true;document.body.classList.add('in-game');document.body.classList.toggle('split-screen',mode==='pvp');resize();
  players.forEach((a,i)=>updateCamera(i,1,true));
  if(mode==='pvp'&&pvpFormat==='duel'){
@@ -345,6 +347,23 @@ function storyFail(){
 }
 window.addEventListener('keydown',e=>{if(cutsceneActive()&&(e.code==='Enter'||e.code==='Space'||e.code==='Escape')){skipCinema();e.preventDefault();}},true);
 document.getElementById('cinema')?.addEventListener('click',skipCinema);
+
+// ================= DEATH BATTLE =================
+function aliveCounts(){const r={heroes:0,villains:0};for(const a of actors)if(a.active!==false&&!a.dead)r[a.def.team]++;return r;}
+function spectList(){const me=players[0];const l=actors.filter(a=>a.active!==false&&!a.dead);l.sort((x,y)=>(y.def.team===me?.def.team)-(x.def.team===me?.def.team));return l;}
+function spectTarget(){const l=spectList();if(!l.length)return players[0];return l[((specIndex%l.length)+l.length)%l.length];}
+function checkElimination(){
+ if(mode!=='deathbattle'||state!=='playing')return;
+ const al=aliveCounts();if(al.heroes>0&&al.villains>0)return;
+ const winner=al.heroes>0?'heroes':'villains',mine=players[0]?.def.team;
+ spectating=false;
+ showResult(winner==='heroes'?'De helden winnen!':'De slechteriken winnen!',(mine===winner?'Jouw team heeft gewonnen · ':'Jouw team heeft verloren · ')+'overlevenden: '+Math.max(al.heroes,al.villains)+' · '+worldNames[worldId],'Opnieuw spelen');
+}
+window.addEventListener('keydown',e=>{
+ if(!spectating)return;
+ if(e.code==='Tab'||e.code==='ArrowRight'){specIndex++;e.preventDefault();}
+ else if(e.code==='ArrowLeft'){specIndex--;e.preventDefault();}
+});
 function awardCivilian(a,text){
  if(!a||a.player<0||duel)return;
  a.kills=(a.kills||0)+1;koTotal++;score[a.def.team]++;toast(text,2.2);sound('special',.05);
@@ -498,6 +517,12 @@ function damage(target,amount,attacker,slow=0){
    target.dead=true;target.healing=0;target.pendingAttack=null;target.pendingPistol=null;target.respawn=5;target.group.visible=false;burst(eye(target),target.def.team==='heroes'?'#5fbfff':'#ff6a86',2.5,'sphere',.7);
    attacker.kills=(attacker.kills||0)+1;if(attacker.player>=0&&target.player<0)koTotal++;
    if(duel){duel.knockout(target.player);return;}
+   if(mode==='deathbattle'){
+     if(attacker.player>=0)toast('KO · '+target.def.name,2);
+     if(target.player>=0){spectating=true;specIndex=0;toast('Je bent uitgeschakeld. Je kijkt nu mee.',4);}
+     if(isLeader(target))toast('De aanvoerder '+target.def.name+' is gevallen!',3);
+     checkElimination();return;
+   }
    if(mode==='story'){
      if(target.player>=0){storyFail();return;}
      if(target.def.team==='villains'&&story){
@@ -736,7 +761,7 @@ function updateActors(dt){
    }
    a.attackAnim=Math.max(0,a.attackAnim-dt*3);a.pistolAnim=Math.max(0,a.pistolAnim-dt*2.8);a.hurt=Math.max(0,a.hurt-dt);
    if(a.dead){
-     if(state==='playing'&&!duel&&mode!=='survival'&&mode!=='story'){a.respawn-=dt;if(a.respawn<=0){const player=a.player;resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.def.team==='heroes'?Math.PI:0});a.player=player;a.invulnerable=2;burst(eye(a),effectColors[a.def.id],2.5,'sphere',.8);}}
+     if(state==='playing'&&!duel&&mode!=='survival'&&mode!=='story'&&mode!=='deathbattle'){a.respawn-=dt;if(a.respawn<=0){const player=a.player;resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.def.team==='heroes'?Math.PI:0});a.player=player;a.invulnerable=2;burst(eye(a),effectColors[a.def.id],2.5,'sphere',.8);}}
      continue;
    }
    if(canAct()&&a.healing>0){const time=Math.min(dt,a.healing);a.hp=Math.min(a.maxHp,a.hp+time*12);a.healing=Math.max(0,a.healing-time);}
@@ -779,7 +804,7 @@ function dialogue(){
  }catch{}}
 }
 function updateCamera(index,dt,snap=false){
- const a=players[index];if(!a)return;const s=cameraStates[index],p=a.group.position,characterHeight=(a.rig.height||2.82)*a.group.scale.y;
+ const a=(spectating&&index===0)?spectTarget():players[index];if(!a)return;const s=cameraStates[index],p=a.group.position,characterHeight=(a.rig.height||2.82)*a.group.scale.y;
  const look=new THREE.Vector3(p.x,p.y+Math.max(.75,characterHeight*.58),p.z),desired=look.clone().add(new THREE.Vector3(Math.sin(s.yaw)*s.distance,Math.sin(s.pitch)*s.distance+1.1,Math.cos(s.yaw)*s.distance)),c=cameras[index];
  const pos=resolveThirdPersonCamera({look,desired,yaw:s.yaw,pitch:s.pitch,distance:s.distance,characterHeight,colliders:world.colliders,previous:snap?null:c.position});
  if(snap)c.position.copy(pos);else c.position.lerp(pos,1-Math.exp(-dt*10));
@@ -808,8 +833,10 @@ function updateHud(){
  if($('ko-counter'))$('ko-counter').textContent='KO: '+koTotal;
  if($('top-kills')){const top=actors.filter(a=>a.kills>0).sort((x,y)=>y.kills-x.kills).slice(0,3);$('top-kills').innerHTML='<b>TOP 3 KO</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+a.kills;$('top-kills').append(s);});}
  if(state==='menu')return;
- players.forEach((a,i)=>{const bar=$(i?'p2-health-fill':'health-fill'),txt=$(i?'p2-health-text':'health-text');bar.style.width=(a.hp/a.maxHp*100)+'%';txt.textContent=a.dead?(duel?'Ronde afgelopen':'Terug in '+Math.ceil(a.respawn)+' s'):Math.ceil(a.hp)+' / '+a.maxHp;});
- $('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='story'||mode==='explore'||mode==='endless'||mode==='battle100'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
+ players.forEach((a,i)=>{const bar=$(i?'p2-health-fill':'health-fill'),txt=$(i?'p2-health-text':'health-text');bar.style.width=(a.hp/a.maxHp*100)+'%';txt.textContent=a.dead?(duel?'Ronde afgelopen':mode==='deathbattle'?'Uitgeschakeld':'Terug in '+Math.ceil(a.respawn)+' s'):Math.ceil(a.hp)+' / '+a.maxHp;});
+ if(mode==='deathbattle'){const al=aliveCounts();$('score-heroes').textContent=al.heroes;$('score-villains').textContent=al.villains;}else{$('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;}
+ if($('spectate')){const t=spectating?spectTarget():null;$('spectate').hidden=!t;if(t)$('spectate').textContent='KIJKT MEE: '+t.def.name+'  ·  Tab of pijltjes om te wisselen';}
+ const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='deathbattle'||mode==='story'||mode==='explore'||mode==='endless'||mode==='battle100'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
  const a=players[0];if(a){const span=$('special-button').querySelector('span');span.textContent=a.specialCooldown>0?Math.ceil(a.specialCooldown)+' s':a.def.id==='antman'?(a.nextPym==='grow'?'Groeien':'Krimpen'):a.def.special;$('special-button').disabled=a.dead||a.specialCooldown>0;$('special-button').style.setProperty('--cooldown',Math.min(1,a.specialCooldown/8));}
  const p=players[0];if(p){$('pistol-button').hidden=p.def.id!=='deadpool';$('pistol-button').disabled=p.dead;$('camera-input-hint').textContent=p.def.id==='deadpool'?'Camera: middelste muisknop slepen of J / L':'Camera: rechts of midden slepen, of J / L';$('flight-button').hidden=!FLIERS.has(p.def.id);$('flight-button').querySelector('span').textContent=p.flying?'Landen':'Vliegen';$('descend-button').hidden=!p.flying;const inside=(world.interiors||[]).find(r=>p.group.position.x>r.minX&&p.group.position.x<r.maxX&&p.group.position.z>r.minZ&&p.group.position.z<r.maxZ&&p.group.position.y<(r.ceiling||6));const place=inside?inside.name:worldNames[worldId];$('area-label').textContent=place+(p.flying?' · '+Math.round(p.group.position.y)+' m hoogte':'');if(inside&&currentInterior!==inside.name)toast(inside.name+(worldId==='avengers'?' · verken de ruimtes via de open deuren.':' · loop door de open deur om weer naar buiten te gaan.'),3);currentInterior=inside?.name||'';}
  drawMinimap();

@@ -148,3 +148,4 @@ select,input,textarea{-webkit-user-select:auto;user-select:auto}
 #cinema-text{position:absolute;left:50%;bottom:15vh;transform:translateX(-50%);width:min(760px,calc(100vw - 40px));text-align:center;font-size:clamp(18px,3vw,30px);line-height:1.35;color:#fff;text-shadow:0 2px 14px #000,0 0 3px #000;font-family:var(--heading)}
 #cinema-skip{position:absolute;right:18px;bottom:3vh;color:#9fb0c4;font-size:11px;letter-spacing:.6px}
 body.cinema #hud{opacity:.12}
+#spectate{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);background:#220d14ee;border:1px solid #ff738866;color:#ffd5dc;padding:9px 18px;border-radius:9px;font-size:13px;letter-spacing:.8px;text-align:center;max-width:calc(100vw - 30px)}
