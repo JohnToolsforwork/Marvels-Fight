@@ -136,6 +136,7 @@ export function createWorld(scene, id = 'newyork') {
 
   // Buiten het oorspronkelijke speelveld (58) bouwen we de rest van de 2,5x grotere kaart:
   // blokken met straten ertussen, zodat je er altijd omheen kunt lopen.
+  const houses = [], CITY = 330;
   const ZC = Math.round(SIZE*.55), spawnZones = id!=='avengers' ? [{x:0,z:0},{x:-ZC,z:-ZC},{x:ZC,z:-ZC},{x:-ZC,z:ZC},{x:ZC,z:ZC}] : null;
   // Een echt gebouw: sokkel, kroonlijst, ramen op alle vier de zijden en een deur met afdak.
   function building(x,z,w,h,d,wall,trim,windowMat,doorMat) {
@@ -182,6 +183,7 @@ export function createWorld(scene, id = 'newyork') {
       if(Math.abs(gx)<=165&&Math.abs(gz)<=165)continue;
       if(spawnZones&&spawnZones.some(q=>Math.abs(gx-q.x)<70&&Math.abs(gz-q.z)<70))continue;
       const x=gx+(rnd()-.5)*10,z=gz+(rnd()-.5)*10,w=22+rnd()*20,d=22+rnd()*20,r=rnd(),near=Math.hypot(x,z)<330;
+      if(kind!=='titan'&&kind!=='savage'&&Math.max(Math.abs(gx),Math.abs(gz))>CITY)continue;
       if(kind==='titan') {mountain(x,z,w*2.2,20+rnd()*50,d*2.2,r>.5?wall1:wall2);}
       else if(kind==='savage') {if(r>.4){for(let k=0;k<3;k++)tree(x+(rnd()-.5)*30,z+(rnd()-.5)*30,3+rnd()*2.5,r>.7?1:0);}else mountain(x,z,w*2,15+rnd()*40,d*2,wall1);}
       else {
@@ -190,6 +192,37 @@ export function createWorld(scene, id = 'newyork') {
         else {box(r>.5?wall1:wall2,x,h/2,z,w,h,d);box(trim,x,h+.4,z,w+.6,.8,d+.6,0,true);}
       }
     }
+
+    // Om de stad heen: gras met kleine huisjes. Wie bij de deur komt, wordt naar een willekeurige plek in de stad geteleporteerd.
+    if(kind!=='titan'&&kind!=='savage') {
+      const grass=mat('outskirtsGrass','#4d9a4a'),half=boundary+30;
+      const gm=(CITY+half)/2,gw=half-CITY;
+      box(grass,gm,-.05,0,gw,.1,half*2,0,true);box(grass,-gm,-.05,0,gw,.1,half*2,0,true);
+      box(grass,0,-.05,gm,CITY*2,.1,gw,0,true);box(grass,0,-.05,-gm,CITY*2,.1,gw,0,true);
+    }
+    const wallM=mat('houseWall','#efe6cf'),roofs=[mat('houseRoofA','#b5483a'),mat('houseRoofB','#3f6fb0'),mat('houseRoofC','#c28a2b')],glowDoor=mat('houseDoor','#8fe9ff',{emissive:'#35c7f0',emissiveIntensity:.9});
+    const placed=[];
+    function house(x,z) {
+      if(Math.abs(x)>boundary-25||Math.abs(z)>boundary-25)return;
+      if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<28))return;
+      if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<32))return;
+      placed.push({x,z});
+      const rot=Math.atan2(-x,-z),w=7,d=6,h=4,k=houses.length%3,sn=Math.sin(rot),cs=Math.cos(rot);
+      box(wallM,x,h/2,z,w,h,d,rot);
+      add('cone',roofs[k],x,h+1.5,z,w*1.5,3.2,d*1.5,rot+Math.PI/4);
+      box(glowDoor,x+sn*(d/2+.06),1.35,z+cs*(d/2+.06),1.8,2.7,.12,rot,true);
+      const tx=x+sn*(d/2+2.4),tz=z+cs*(d/2+2.4);
+      ring(glowDoor,tx,.1,tz,1.7);
+      beam(glowDoor,[tx,0,tz],[tx,46,tz],.32,true);
+      tree(x-cs*8,z+sn*8,1.1,houses.length%2);
+      houses.push({x,z,tx,tz});
+    }
+    for(let i=0;i<90;i++){
+      const a=rnd()*Math.PI*2,rr=CITY+25+rnd()*(boundary-CITY-60);
+      house(Math.sin(a)*rr,Math.cos(a)*rr);
+    }
+    if(spawnZones)for(const q of spawnZones.slice(1))for(let i=0;i<5;i++){const a=i/5*Math.PI*2+rnd(),rr=48+rnd()*35;house(q.x+Math.sin(a)*rr,q.z+Math.cos(a)*rr);}
+    for(let i=0;i<260;i++){const a=rnd()*Math.PI*2,rr=CITY+10+rnd()*(boundary-CITY-40),x=Math.sin(a)*rr,z=Math.cos(a)*rr;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<14))continue;if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<32))continue;tree(x,z,1.4+rnd()*1.6,i%2);}
   }
 
   // Every environment has continuous ground. The limits are invisible solid boundaries,
@@ -623,5 +656,5 @@ export function createWorld(scene, id = 'newyork') {
     scene.remove(group);group.traverse(obj=>{if(obj.isInstancedMesh && obj.dispose)obj.dispose();});for(const g of geos.values())g.dispose();for(const m of materials.values())m.dispose();for(const t of textures)t.dispose();
     group.clear();batches.clear();
   }
-  return {id,info,group,colliders,spawns,center:{x:0,z:0},bounds:{minX:-boundary,maxX:boundary,minZ:-boundary,maxZ:boundary},spawnZones,landmarks,interiors,update,setQuality,dispose,groundHeight:()=>0};
+  return {id,info,group,colliders,spawns,center:{x:0,z:0},bounds:{minX:-boundary,maxX:boundary,minZ:-boundary,maxZ:boundary},spawnZones,houses,landmarks,interiors,update,setQuality,dispose,groundHeight:()=>0};
 }
