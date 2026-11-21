@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121225523';
-import {startUpdater} from './update.js?v=20261121225523';
-import {createCivilians} from './civilians.js?v=20261121225523';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121225523';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121225523';
-import {createWorld} from './world.js?v=20261121225523';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121225523';
-import {createDuel} from './pvp.js?v=20261121225523';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121225523';
-import {updateNPCFlight} from './npc-flight.js?v=20261121225523';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121225523';
+import {music} from './music.js?v=20261121225659';
+import {startUpdater} from './update.js?v=20261121225659';
+import {createCivilians} from './civilians.js?v=20261121225659';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121225659';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121225659';
+import {createWorld} from './world.js?v=20261121225659';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121225659';
+import {createDuel} from './pvp.js?v=20261121225659';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121225659';
+import {updateNPCFlight} from './npc-flight.js?v=20261121225659';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121225659';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -722,13 +722,15 @@ function npcFlightSpace(a,target){
 }
 function updateAI(a,dt){
  if(a.stun>0){a.flightAxis=0;return;}
+ if(a.detour&&elapsed<a.detour.until&&Math.hypot(a.detour.x-a.group.position.x,a.detour.z-a.group.position.z)>2.5){followPath(a,a.detour,a.def.speed*.8,dt);return;}
  a.nextAI-=dt;a.specialThink=Math.max(0,a.specialThink-dt);
  if(a.nextAI<=0||!canTarget(a,a.target)){
   let chosen=null,best=Infinity;
   for(const b of actors){
    if(!canTarget(a,b))continue;
+   if(a.blacklist&&(a.blacklist.get(b)||0)>elapsed)continue;
    const distance=a.group.position.distanceTo(b.group.position);
-   const rank=distance*(b===a.target?.78:1)+(clearSight(eye(a),eye(b),world.colliders)?0:7);
+   const rank=distance*(b===a.target?.78:1)+(clearSight(eye(a),eye(b),world.colliders)?0:7)+((b.group.position.y>3.5&&!FLIERS.has(a.def.id))?25:0);
    if(rank<best){best=rank;chosen=b;}
   }
   if(chosen!==a.target)a.pathAge=0;
@@ -737,6 +739,15 @@ function updateAI(a,dt){
  const b=a.target;
  if(!b){updateNPCFlight(a,dt,{canFly:FLIERS.has(a.def.id),enabled:false,distance:Infinity,targetY:0,maxAltitude:32,floorY:groundHeight(a,a.group.position.y)});return;}
  const spec=SPECS[a.def.id],distance=a.group.position.distanceTo(b.group.position),canSee=clearSight(eye(a),eye(b),world.colliders);
+ // Komt hij al een tijdje niet dichterbij (bijv. vast tegen een gebouw)? Kies dan even een ander doel of loop een stuk om.
+ if(a.chaseTarget!==b){a.chaseTarget=b;a.chaseBest=distance;a.chaseT=0;}
+ else if(distance<a.chaseBest-1.5){a.chaseBest=distance;a.chaseT=0;}
+ else if(distance>spec.range+3&&!canSee)a.chaseT+=dt;
+ if(a.chaseT>3.5){
+  (a.blacklist??=new Map()).set(b,elapsed+9);a.target=null;a.chaseTarget=null;a.chaseT=0;a.pathAge=0;
+  for(let i=0;i<12;i++){const ang=Math.random()*Math.PI*2,dd=14+Math.random()*14,x=a.group.position.x+Math.cos(ang)*dd,z=a.group.position.z+Math.sin(ang)*dd;if(!blocked(x,z,a.radius+.5,0,world.colliders,world.bounds)){a.detour={x,z,until:elapsed+7};break;}}
+  a.nextAI=0;return;
+ }
  const closeThreat=canSee&&distance<=Math.max(spec.range+2,12);
  if(a.talking&&!closeThreat&&a.hurt<=0){updateNPCFlight(a,dt,{canFly:FLIERS.has(a.def.id),enabled:false,distance,targetY:b.group.position.y,...npcFlightSpace(a,b)});return;}
  if(a.talking){a.talking=false;if(currentTalker===a){window.speechSynthesis?.cancel();currentTalker=null;dialogueUntil=elapsed;}}
