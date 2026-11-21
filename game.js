@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121204344';
-import {startUpdater} from './update.js?v=20261121204344';
-import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204344';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121204344';
-import {createWorld} from './world.js?v=20261121204344';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204344';
-import {createDuel} from './pvp.js?v=20261121204344';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204344';
-import {updateNPCFlight} from './npc-flight.js?v=20261121204344';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204344';
+import {music} from './music.js?v=20261121204518';
+import {startUpdater} from './update.js?v=20261121204518';
+import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204518';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121204518';
+import {createWorld} from './world.js?v=20261121204518';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204518';
+import {createDuel} from './pvp.js?v=20261121204518';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204518';
+import {updateNPCFlight} from './npc-flight.js?v=20261121204518';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204518';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -626,6 +626,9 @@ window.addEventListener('keydown',e=>{
 });
 window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();touch.clear();dragging=false;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>{if(!(e.target instanceof Element&&e.target.closest('select,input,textarea')))e.preventDefault();});
+document.addEventListener('selectstart',e=>{if(!(e.target instanceof Element&&e.target.closest('select,input,textarea')))e.preventDefault();});
+document.addEventListener('dragstart',e=>e.preventDefault());
 canvas.addEventListener('pointerdown',e=>{
  const pistolClick=state==='playing'&&players[0]?.def.id==='deadpool'&&e.button===2;
  if(pistolClick){e.preventDefault();keys.add('Mouse2');firePistol(players[0]);canvas.setPointerCapture(e.pointerId);}
