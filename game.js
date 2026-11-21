@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121205301';
-import {startUpdater} from './update.js?v=20261121205301';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121205301';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121205301';
-import {createWorld} from './world.js?v=20261121205301';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121205301';
-import {createDuel} from './pvp.js?v=20261121205301';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121205301';
-import {updateNPCFlight} from './npc-flight.js?v=20261121205301';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121205301';
+import {music} from './music.js?v=20261121211418';
+import {startUpdater} from './update.js?v=20261121211418';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121211418';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121211418';
+import {createWorld} from './world.js?v=20261121211418';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121211418';
+import {createDuel} from './pvp.js?v=20261121211418';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121211418';
+import {updateNPCFlight} from './npc-flight.js?v=20261121211418';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121211418';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -28,6 +28,8 @@ const rim=new THREE.DirectionalLight(0xabcfff,1.35);rim.position.set(25,16,-32);
 const roomLights=new THREE.Group();scene.add(roomLights);
 const cameras=[new THREE.PerspectiveCamera(52,1,.25,500),new THREE.PerspectiveCamera(52,1,.25,500)];
 const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
+// Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
+const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
 let width=innerWidth,height=innerHeight,world,nav,worldId='newyork',team='heroes',selected='deadpool',p2id='sabretooth',mode='explore',koTotal=0,wave=0,waveBreak=0,survKills=0,state='menu',elapsed=0,matchTime=180,frameCount=0;
@@ -140,7 +142,7 @@ function makeActor(def,index){
  return {def,rig,group,index,marker,shadow,labels,hp:def.hp,maxHp:def.hp,radius:baseRadius(def.id),vy:0,cooldown:0,specialCooldown:0,attackAnim:0,dead:false,respawn:0,hurt:0,slow:0,stun:0,invulnerable:0,speedBuff:0,moving:false,talking:false,nextTalk:0,nextAI:Math.random(),path:[],pathAge:0,aggro:0,lastAttacker:null,spawn:new THREE.Vector3(),wander:new THREE.Vector3(),nextWander:0,player:-1};
 }
 function resetActor(a,spawn){
- a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
+ a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
  clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);
@@ -164,7 +166,7 @@ function applySkin(a,skinId){
  const group=rig.group;group.position.copy(pos);group.rotation.copy(rot);group.scale.copy(sc);group.visible=vis;
  group.add(a.marker);group.add(a.shadow);scene.add(group);scene.remove(old);
  a.rig=rig;a.group=group;a.skin=skin;
- const ratio=a.hp/a.maxHp;a.maxHp=Math.round(a.def.hp*(isLeader(a)?1.5:1)*(skin?.hp||1));a.hp=Math.max(1,Math.round(a.maxHp*ratio));
+ const ratio=a.hp/a.maxHp;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(skin?.hp||1));a.hp=Math.max(1,Math.round(a.maxHp*ratio));
 }
 function chooseSkin(charId,skinId){
  const a=actors.find(x=>x.def.id===charId);if(!a)return;
@@ -180,12 +182,12 @@ function renderSkins(){
  const mk=(id,name,title)=>{const b=document.createElement('button');b.type='button';b.className='skin-chip'+((cur===id)?' active':'');b.textContent=name;b.title=title;b.addEventListener('click',()=>chooseSkin(selected,id));box.append(b);};
  mk('','Standaard','Het normale pak');for(const s of list)mk(s.id,s.name,s.note);
  const d=ROSTER.find(x=>x.id===selected),sk=list.find(k=>k.id===cur);
- $('stat-health').textContent=Math.round(d.hp*(sk?.hp||1));$('stat-power').textContent=Math.round(d.damage*(sk?.dmg||1));
+ $('stat-health').textContent=Math.round(d.hp*BAL[d.team].hp*(sk?.hp||1));$('stat-power').textContent=Math.round(d.damage*BAL[d.team].dmg*(sk?.dmg||1));
 }
 function chooseCharacter(id){
  selected=id;const d=ROSTER.find(a=>a.id===id);team=d.team;
  $('character-name').textContent=d.name;$('character-role').textContent=d.role;$('character-power').textContent=d.id==='thor'?'Mjölnir · hamerslag':d.id==='widow'?'Elektrische wapenstok':d.power;$('character-description').textContent=d.description+(FLIERS.has(id)?' Druk op F om te vliegen.':'');
- $('stat-health').textContent=d.hp;$('stat-speed').textContent=d.speed;$('stat-power').textContent=d.damage;
+ $('stat-health').textContent=Math.round(d.hp*BAL[d.team].hp);$('stat-speed').textContent=d.speed;$('stat-power').textContent=Math.round(d.damage*BAL[d.team].dmg);
  $('stat-health').parentElement.style.setProperty('--stat',clamp(d.hp/270,0,1)*100+'%');$('stat-speed').parentElement.style.setProperty('--stat',clamp(d.speed/10,0,1)*100+'%');$('stat-power').parentElement.style.setProperty('--stat',clamp(d.damage/30,0,1)*100+'%');
  if($('selected-name'))$('selected-name').textContent=d.name;if($('selected-special'))$('selected-special').textContent=d.special;document.body.style.setProperty('--chosen-accent',d.team==='heroes'?'#82dcff':'#ff91a2');previewHalo.material.color.set(d.team==='heroes'?0x72dfff:0xff8297);
  document.querySelectorAll('.roster-card').forEach(e=>{e.classList.toggle('selected',e.dataset.id===id);e.setAttribute('aria-pressed',String(e.dataset.id===id));});
@@ -347,6 +349,7 @@ function damage(target,amount,attacker,slow=0){
  if(!canAct()||!canTarget(attacker,target)||target.invulnerable>0)return;
  if(mode==='survival'&&attacker.player<0)amount*=1+.06*(wave-1);
  if(attacker.skin?.dmg)amount*=attacker.skin.dmg;
+ amount*=BAL[attacker.def.team].dmg;
  if(duel){const spec=SPECS[attacker.def.id];amount*=clamp(34*spec.rate/attacker.def.damage,.6,1.4)*(['melee','hammer'].includes(spec.kind)?1.2:1);}
  if(attacker.player>=0)attacker.aggro=18;
  target.hp=Math.max(0,target.hp-amount);target.hurt=.22;target.aggro=12;target.lastAttacker=attacker;target.slow=Math.max(target.slow,slow);particles(eye(target),effectColors[attacker.def.id],5);
