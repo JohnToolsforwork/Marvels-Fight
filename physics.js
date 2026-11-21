@@ -43,23 +43,54 @@ export function makeNavigator(boxes,bounds,actorHeight=2.5){
   const grid=new Uint8Array(nx*nz);
   for(let i=0;i<grid.length;i++){const p=point(i);grid[i]=blocked(p.x,p.z,.75,0,boxes,bounds,actorHeight)?1:0;}
   const idx=p=>Math.max(0,Math.min(nz-1,Math.floor((p.z-bounds.minZ)/cell)))*nx+Math.max(0,Math.min(nx-1,Math.floor((p.x-bounds.minX)/cell)));
+  const neighbors=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  // Dichtstbijzijnde vrije cel (voor als start of doel tegen een gebouw aan staat).
+  function nearestFree(i){
+    if(!grid[i])return i;
+    const cx=i%nx,cz=Math.floor(i/nx);
+    for(let r=1;r<=6;r++)for(let dz=-r;dz<=r;dz++)for(let dx=-r;dx<=r;dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dz))!==r)continue;
+      const x=cx+dx,z=cz+dz;if(x<0||x>=nx||z<0||z>=nz)continue;
+      if(!grid[z*nx+x])return z*nx+x;
+    }
+    return i;
+  }
+  const n=nx*nz,cost=new Float32Array(n),prev=new Int32Array(n),seen=new Uint32Array(n);let stamp=0;
+  const hf=[],hi=[];
+  function push(f,i){hf.push(f);hi.push(i);let k=hf.length-1;while(k>0){const q=(k-1)>>1;if(hf[q]<=hf[k])break;[hf[q],hf[k]]=[hf[k],hf[q]];[hi[q],hi[k]]=[hi[k],hi[q]];k=q;}}
+  function pop(){
+    const top=hi[0],lf=hf.pop(),li=hi.pop();
+    if(hf.length){hf[0]=lf;hi[0]=li;let k=0;for(;;){let l=2*k+1,r=l+1,m=k;if(l<hf.length&&hf[l]<hf[m])m=l;if(r<hf.length&&hf[r]<hf[m])m=r;if(m===k)break;[hf[m],hf[k]]=[hf[k],hf[m]];[hi[m],hi[k]]=[hi[k],hi[m]];k=m;}}
+    return top;
+  }
   return function route(start,end){
     if(clearSight({...start,y:0},{...end,y:0},groundBoxes,.8))return [{x:end.x,z:end.z}];
-    const s=idx(start),goal=idx(end),cost=new Float32Array(grid.length).fill(Infinity),prev=new Int32Array(grid.length).fill(-1),open=[s],closed=new Set();cost[s]=0;
-    const heuristic=i=>Math.hypot(i%nx-goal%nx,Math.floor(i/nx)-Math.floor(goal/nx));
-    let found=s,best=heuristic(s),iterations=0;
-    while(open.length&&iterations++<1400){
-      let k=0;for(let j=1;j<open.length;j++)if(cost[open[j]]+heuristic(open[j])<cost[open[k]]+heuristic(open[k]))k=j;
-      const u=open.splice(k,1)[0];if(u===goal){found=u;break;}closed.add(u);
-      if(heuristic(u)<best){best=heuristic(u);found=u;}
-      for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
-        const x=u%nx+dx,z=Math.floor(u/nx)+dz;if(x<0||x>=nx||z<0||z>=nz)continue;const v=z*nx+x;
+    const s=nearestFree(idx(start)),goal=nearestFree(idx(end));
+    stamp++;hf.length=0;hi.length=0;
+    const gx=goal%nx,gz=Math.floor(goal/nx);
+    const heuristic=i=>{const dx=Math.abs(i%nx-gx),dz=Math.abs(Math.floor(i/nx)-gz);return Math.max(dx,dz)+.414*Math.min(dx,dz);};
+    cost[s]=0;prev[s]=-1;seen[s]=stamp;push(heuristic(s),s);
+    const done=new Uint8Array(0);let found=s,best=heuristic(s),iterations=0;const closed=new Set();
+    while(hf.length&&iterations++<9000){
+      const u=pop();if(closed.has(u))continue;closed.add(u);
+      if(u===goal){found=u;break;}
+      const h=heuristic(u);if(h<best){best=h;found=u;}
+      const ux=u%nx,uz=Math.floor(u/nx);
+      for(const [dx,dz] of neighbors){
+        const x=ux+dx,z=uz+dz;if(x<0||x>=nx||z<0||z>=nz)continue;const v=z*nx+x;
         if(grid[v]||closed.has(v))continue;
-        if(dx&&dz&&(grid[Math.floor(u/nx)*nx+x]||grid[z*nx+u%nx]))continue;
-        const c=cost[u]+Math.hypot(dx,dz);if(c<cost[v]){cost[v]=c;prev[v]=u;if(!open.includes(v))open.push(v);}
+        if(dx&&dz&&(grid[uz*nx+x]||grid[z*nx+ux]))continue;
+        const c=cost[u]+(dx&&dz?1.414:1);
+        if(seen[v]!==stamp||c<cost[v]){seen[v]=stamp;cost[v]=c;prev[v]=u;push(c+heuristic(v),v);}
       }
     }
     const path=[];for(let i=found;i!==s&&i!==-1;i=prev[i])path.unshift(point(i));
-    return path;
+    // Trek het pad recht: sla tussenpunten over als je er rechtstreeks heen kunt lopen.
+    const out=[];let from={x:start.x,z:start.z},k=0;
+    while(k<path.length){
+      let far=k;for(let m=Math.min(path.length-1,k+10);m>k;m--){if(clearSight({...from,y:0},{...path[m],y:0},groundBoxes,.9)){far=m;break;}}
+      out.push(path[far]);from=path[far];k=far+1;
+    }
+    return out;
   };
 }
