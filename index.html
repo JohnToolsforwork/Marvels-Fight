@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="build" content="20261121225143">
+  <meta name="build" content="20261121225523">
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Speel Marvels Fight: een gratis 3D-fangame met 30 Marvel-personages. Verken zeven grote werelden, waaronder Avengers Tower en Kamar-Taj, speel teamstrijd of daag elkaar uit in lokale PvP-duels.">
   <meta name="robots" content="index,follow">
@@ -16,7 +16,7 @@
   <title>Marvels Fight — 3D-game met helden, slechteriken en PvP</title>
   <link rel="canonical" href="https://johntoolsforwork.github.io/Marvels-Fight/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261121225143">
+  <link rel="stylesheet" href="style.css?v=20261121225523">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Marvels Fight","url":"https://johntoolsforwork.github.io/Marvels-Fight/","description":"Gratis 3D-fangame met dertig Marvel-personages, zeven werelden, teamstrijd en lokale PvP voor twee spelers op hetzelfde apparaat.","inLanguage":"nl","gamePlatform":"Web browser","applicationCategory":"Game","genre":["Action","Adventure"],"playMode":["SinglePlayer","MultiPlayer"],"isAccessibleForFree":true}</script>
@@ -96,7 +96,7 @@
           <p>Slechteriken: Thanos, Loki, Ultron, Green Goblin, Doctor Octopus, Venom, Red Skull, Hela, Killmonger, Mysterio, Magneto, Electro, Abomination, Doctor Doom en Sabretooth.</p>
           <p>Locaties: New York, Wakanda, Asgard, Avengers Tower en Kamar-Taj. In New York vind je verlichte ingangen. Avengers Tower heeft een speelbaar interieur; Kamar-Taj heeft een tempel en bibliotheek.</p>
           <p>Ook tijdens Verkennen zoeken computergestuurde helden en slechteriken elkaar op om te vechten. Jij kunt de wereld verkennen of zelf aan de strijd meedoen. Vliegende personages stijgen zelfstandig op en landen weer; grondpersonages vechten lopend.</p>
-          <p>Deadpool slaat met zijn katanas via de linkermuisknop en schiet met zijn pistolen via de rechtermuisknop. Hij heeft 240 leven, ook in duels. Zijn Herstelfactor herstelt 36 leven in 3 seconden en heeft 12 seconden wachttijd. Hij blijft tijdens het herstel kwetsbaar.</p>
+          <p>Deadpool slaat met zijn katanas via de linkermuisknop. Met Q wissel je naar zijn pistolen: dan schiet de linkermuisknop. Zijn Herstelfactor zit op E. De rechtermuisknop draait gewoon de camera. Hij heeft 240 leven, ook in duels. Zijn Herstelfactor herstelt 36 leven in 3 seconden en heeft 12 seconden wachttijd. Hij blijft tijdens het herstel kwetsbaar.</p>
           <p>Ant-Man wisselt met Q tussen klein en snel, en groot en sterk. Zijn grotere vorm heeft meer slagkracht en bereik.</p>
           <p>Loop naar een personage voor een automatisch gesprek. Kies hoge of lage graphics en gebruik de hulpknop voor de besturing. Dit is een onafhankelijk fanconcept.</p>
         </details>
@@ -141,7 +141,7 @@
     <div class="camera-controls" aria-label="Camera draaien"><button id="camera-left" title="Camera links draaien (J)"><kbd>J</kbd> Links draaien</button><button id="camera-right" title="Camera rechts draaien (L)"><kbd>L</kbd> Rechts draaien</button></div>
     <div id="area-label" class="area-label">NEW YORK</div>
     <div class="ability-dock">
-      <div class="ability-buttons"><button id="attack-button" title="Aanvallen met de linkermuisknop"><kbd>Linkermuisklik</kbd><span>Aanval</span></button><button id="pistol-button" hidden title="Deadpool: schieten met de rechtermuisknop" aria-label="Deadpool: pistolen afvuren"><kbd>Rechtermuisklik</kbd><span>Schiet</span></button><button id="special-button" class="special-ability"><kbd>Q</kbd><span>Superkracht</span></button><button id="dash-button"><kbd>Shift</kbd><span>Ontwijk / sprint</span></button><button id="flight-button" hidden><kbd>F</kbd><span>Vliegen</span></button><button id="descend-button" hidden><kbd>C</kbd><span>Dalen</span></button></div>
+      <div class="ability-buttons"><button id="attack-button" title="Aanvallen met de linkermuisknop"><kbd>Linkermuisklik</kbd><span>Aanval</span></button><button id="pistol-button" hidden title="Deadpool: wissel tussen zwaard en pistool met Q" aria-label="Deadpool: pistolen afvuren"><kbd>Q</kbd><span>Wissel wapen</span></button><button id="special-button" class="special-ability"><kbd>Q</kbd><span>Superkracht</span></button><button id="dash-button"><kbd>Shift</kbd><span>Ontwijk / sprint</span></button><button id="flight-button" hidden><kbd>F</kbd><span>Vliegen</span></button><button id="descend-button" hidden><kbd>C</kbd><span>Dalen</span></button></div>
       <p class="movement-hint"><span><kbd>WASD</kbd> bewegen</span><span><kbd>Spatie</kbd> springen</span><span id="camera-input-hint">Camera: middelste muisknop slepen of J / L</span></p>
     </div>
     <div class="minimap-panel"><canvas id="minimap" width="160" height="160" aria-label="Plattegrond van de speelwereld"></canvas><div class="map-caption"><span>OMGEVING</span><span>N</span></div></div>
@@ -164,5 +164,5 @@
   <div id="loading" role="status"><div class="loading-brand"><span class="marvel-wordmark">MARVELS</span><span>FIGHT</span></div><div class="loading-track"><i></i></div><p id="loading-text">De wereld wordt opgebouwd…</p></div>
   <div id="fatal" hidden role="alert"></div>
   <noscript><div class="noscript">Schakel JavaScript in om deze 3D-game te spelen.</div></noscript>
-  <script type="module" src="game.js?v=20261121225143"></script>
+  <script type="module" src="game.js?v=20261121225523"></script>
 </html>

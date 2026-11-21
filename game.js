@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121225143';
-import {startUpdater} from './update.js?v=20261121225143';
-import {createCivilians} from './civilians.js?v=20261121225143';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121225143';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121225143';
-import {createWorld} from './world.js?v=20261121225143';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121225143';
-import {createDuel} from './pvp.js?v=20261121225143';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121225143';
-import {updateNPCFlight} from './npc-flight.js?v=20261121225143';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121225143';
+import {music} from './music.js?v=20261121225523';
+import {startUpdater} from './update.js?v=20261121225523';
+import {createCivilians} from './civilians.js?v=20261121225523';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121225523';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121225523';
+import {createWorld} from './world.js?v=20261121225523';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121225523';
+import {createDuel} from './pvp.js?v=20261121225523';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121225523';
+import {updateNPCFlight} from './npc-flight.js?v=20261121225523';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121225523';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -32,7 +32,7 @@ const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 // Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
 const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
-let spectating=false,specIndex=0;
+let spectating=false,specIndex=0,pistolMode=false;
 let cutUntil=0,cutStart=0,cutLines=[],cutCb=null,cutIdx=-1,storyIndex=0,story=null;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
 let width=innerWidth,height=innerHeight,world,nav,worldId='newyork',team='heroes',selected='deadpool',p2id='sabretooth',mode='explore',koTotal=0,wave=0,waveBreak=0,survKills=0,state='menu',elapsed=0,matchTime=180,frameCount=0;
@@ -222,6 +222,7 @@ async function renderPortraits(){
  r.dispose();r.forceContextLoss();
 }
 function startGame(){
+ pistolMode=false;
  spectating=false;specIndex=0;if($('spectate'))$('spectate').hidden=true;
  if(mode==='story')prepareStory();
  $('rematch-button').textContent='Opnieuw spelen';if($('objective'))$('objective').hidden=true;civ.autoHelp=mode!=='story';
@@ -483,6 +484,10 @@ function wrapWeb(target){
 }
 
 const PISTOL={range:26,rate:.28,speed:52,damage:14,kind:'bullet'};
+function toggleWeapon(a){
+ if(!a||a.def.id!=='deadpool'||a.dead)return;
+ pistolMode=!pistolMode;toast(pistolMode?'Pistool gepakt: linkermuisklik schiet.':'Zwaard gepakt: linkermuisklik slaat.',2);sound('special',.04);
+}
 function firePistol(a){
  if(!a||a.def.id!=='deadpool'||a.dead||a.stun>0||a.pistolCooldown>0||!canAct())return;
  if(a.player>=0)a.aggro=18;
@@ -659,7 +664,7 @@ function controlActor(a,index,dt){
  a.flightAxis=(keys.has(p2?'ControlRight':'Space')||(!p2&&touch.has('rise'))?1:0)-(keys.has(p2?'Numpad1':'KeyC')||(!p2&&touch.has('descend'))?1:0);
  const pad=navigator.getGamepads?.()[index];
  if(pad){x+=Math.abs(pad.axes[0])>.15?pad.axes[0]:0;z+=Math.abs(pad.axes[1])>.15?pad.axes[1]:0;cameraStates[index].yaw-=Math.abs(pad.axes[2]||0)>.15?pad.axes[2]*dt*2.5:0;if(pad.buttons[0]?.pressed)jump(a);if(pad.buttons[7]?.pressed)attack(a);if(pad.buttons[5]?.pressed)special(a);sprint||=pad.buttons[10]?.pressed;if(pad.buttons[3]?.pressed&&!a.flightButton)toggleFlight(a);a.flightButton=!!pad.buttons[3]?.pressed;if(a.flying){if(pad.buttons[0]?.pressed)a.flightAxis=1;if(pad.buttons[1]?.pressed)a.flightAxis=-1;}}
- if(p2&&keys.has('Enter'))attack(a);if(!p2&&keys.has('Mouse0'))attack(a);if((p2&&keys.has('Numpad2'))||(!p2&&keys.has('Mouse2')))firePistol(a);
+ if(p2&&keys.has('Enter'))attack(a);if(!p2&&keys.has('Mouse0'))(pistolMode&&a.def.id==='deadpool')?firePistol(a):attack(a);if(p2&&keys.has('Numpad2'))firePistol(a);
  const len=Math.max(1,Math.hypot(x,z));x/=len;z/=len;const yaw=cameraStates[index].yaw,dx=x*Math.cos(yaw)+z*Math.sin(yaw),dz=z*Math.cos(yaw)-x*Math.sin(yaw);
  const speed=a.def.speed*(sprint?1.45:1)*(a.flying?1.2:1)*(a.slow>0?.45:1)*movementModifier(a),response=1-Math.exp(-dt*(x||z?20:25));
  a.moveVelocity.x=THREE.MathUtils.lerp(a.moveVelocity.x,dx*speed,response);a.moveVelocity.z=THREE.MathUtils.lerp(a.moveVelocity.z,dz*speed,response);
@@ -838,7 +843,7 @@ function updateHud(){
  if($('spectate')){const t=spectating?spectTarget():null;$('spectate').hidden=!t;if(t)$('spectate').textContent='KIJKT MEE: '+t.def.name+'  ·  Tab of pijltjes om te wisselen';}
  const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='deathbattle'||mode==='story'||mode==='explore'||mode==='endless'||mode==='battle100'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
  const a=players[0];if(a){const span=$('special-button').querySelector('span');span.textContent=a.specialCooldown>0?Math.ceil(a.specialCooldown)+' s':a.def.id==='antman'?(a.nextPym==='grow'?'Groeien':'Krimpen'):a.def.special;$('special-button').disabled=a.dead||a.specialCooldown>0;$('special-button').style.setProperty('--cooldown',Math.min(1,a.specialCooldown/8));}
- const p=players[0];if(p){$('pistol-button').hidden=p.def.id!=='deadpool';$('pistol-button').disabled=p.dead;$('camera-input-hint').textContent=p.def.id==='deadpool'?'Camera: middelste muisknop slepen of J / L':'Camera: rechts of midden slepen, of J / L';$('flight-button').hidden=!FLIERS.has(p.def.id);$('flight-button').querySelector('span').textContent=p.flying?'Landen':'Vliegen';$('descend-button').hidden=!p.flying;const inside=(world.interiors||[]).find(r=>p.group.position.x>r.minX&&p.group.position.x<r.maxX&&p.group.position.z>r.minZ&&p.group.position.z<r.maxZ&&p.group.position.y<(r.ceiling||6));const place=inside?inside.name:worldNames[worldId];$('area-label').textContent=place+(p.flying?' · '+Math.round(p.group.position.y)+' m hoogte':'');if(inside&&currentInterior!==inside.name)toast(inside.name+(worldId==='avengers'?' · verken de ruimtes via de open deuren.':' · loop door de open deur om weer naar buiten te gaan.'),3);currentInterior=inside?.name||'';}
+ const p=players[0];if(p){$('pistol-button').hidden=p.def.id!=='deadpool';$('pistol-button').disabled=p.dead;$('camera-input-hint').textContent='Camera: rechts of midden slepen, of J / L';{const dp=p.def.id==='deadpool';$('pistol-button').querySelector('span').textContent='Wapen: '+(pistolMode?'pistool':'zwaard');$('pistol-button').querySelector('kbd').textContent='Q';$('special-button').querySelector('kbd').textContent=dp?'E':'Q';}$('flight-button').hidden=!FLIERS.has(p.def.id);$('flight-button').querySelector('span').textContent=p.flying?'Landen':'Vliegen';$('descend-button').hidden=!p.flying;const inside=(world.interiors||[]).find(r=>p.group.position.x>r.minX&&p.group.position.x<r.maxX&&p.group.position.z>r.minZ&&p.group.position.z<r.maxZ&&p.group.position.y<(r.ceiling||6));const place=inside?inside.name:worldNames[worldId];$('area-label').textContent=place+(p.flying?' · '+Math.round(p.group.position.y)+' m hoogte':'');if(inside&&currentInterior!==inside.name)toast(inside.name+(worldId==='avengers'?' · verken de ruimtes via de open deuren.':' · loop door de open deur om weer naar buiten te gaan.'),3);currentInterior=inside?.name||'';}
  drawMinimap();
 }
 
@@ -852,14 +857,14 @@ $('quality-button').addEventListener('click',()=>{settings.high=!settings.high;s
 $('help-button').addEventListener('click',()=>{$('help-modal').hidden=false;keys.clear();$('close-help').focus();});$('close-help').addEventListener('click',()=>{$('help-modal').hidden=true;});
 $('help-modal').addEventListener('click',e=>{if(e.target===$('help-modal'))$('help-modal').hidden=true;});
 $('fullscreen-button').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('Volledig scherm is hier niet beschikbaar. Gebruik eventueel F11.');}});
-$('attack-button').addEventListener('click',()=>attack(players[0]));$('pistol-button').addEventListener('click',()=>firePistol(players[0]));$('special-button').addEventListener('click',()=>special(players[0]));
-const controlKeys=new Set(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyF','KeyC','KeyJ','KeyL','KeyI','KeyK','Numpad0','Numpad1','Numpad2','Numpad4','Numpad6','Space','ShiftLeft','ShiftRight','ControlRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Slash']);
+$('attack-button').addEventListener('click',()=>{if(pistolMode&&players[0]?.def.id==='deadpool')firePistol(players[0]);else attack(players[0]);});$('pistol-button').addEventListener('click',()=>toggleWeapon(players[0]));$('special-button').addEventListener('click',()=>special(players[0]));
+const controlKeys=new Set(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyF','KeyC','KeyJ','KeyL','KeyI','KeyK','Numpad0','Numpad1','Numpad2','Numpad4','Numpad6','Space','ShiftLeft','ShiftRight','ControlRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Slash']);
 window.addEventListener('keydown',e=>{
  if(e.code==='Escape'){
   if(!$('help-modal').hidden){$('help-modal').hidden=true;return;}if(state!=='menu'){showMenu();e.preventDefault();}return;
  }
  if(state!=='playing'||!$('help-modal').hidden)return;if(controlKeys.has(e.code))e.preventDefault();keys.add(e.code);
- if(!e.repeat){if(e.code==='Space')jump(players[0]);if(e.code==='KeyQ')special(players[0]);if(e.code==='ControlRight')jump(players[1]);if(e.code==='Slash')special(players[1]);if(e.code==='ShiftLeft')dodge(players[0]);if(e.code==='ShiftRight')dodge(players[1]);if(e.code==='KeyF')toggleFlight(players[0]);if(e.code==='Numpad0')toggleFlight(players[1]);if(e.code==='Numpad2')firePistol(players[1]);}
+ if(!e.repeat){if(e.code==='Space')jump(players[0]);if(e.code==='KeyQ'){if(players[0]?.def.id==='deadpool')toggleWeapon(players[0]);else special(players[0]);}if(e.code==='KeyE'&&players[0]?.def.id==='deadpool')special(players[0]);if(e.code==='ControlRight')jump(players[1]);if(e.code==='Slash')special(players[1]);if(e.code==='ShiftLeft')dodge(players[0]);if(e.code==='ShiftRight')dodge(players[1]);if(e.code==='KeyF')toggleFlight(players[0]);if(e.code==='Numpad0')toggleFlight(players[1]);if(e.code==='Numpad2')firePistol(players[1]);}
 });
 window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();touch.clear();dragging=false;});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -870,10 +875,10 @@ document.addEventListener('selectionchange',()=>{const s=getSelection();if(s&&s.
 window.addEventListener('mousedown',e=>{if(state!=='menu'&&!(e.target instanceof Element&&e.target.closest('select,input,textarea,button'))){e.preventDefault();getSelection()?.removeAllRanges();}},true);
 window.addEventListener('mouseup',()=>{if(state!=='menu')getSelection()?.removeAllRanges();},true);
 canvas.addEventListener('pointerdown',e=>{
- const pistolClick=state==='playing'&&players[0]?.def.id==='deadpool'&&e.button===2;
+ const pistolClick=false;
  if(pistolClick){e.preventDefault();keys.add('Mouse2');firePistol(players[0]);canvas.setPointerCapture(e.pointerId);}
  if(e.button===1||(e.button===2&&!pistolClick)||e.pointerType==='touch'||(state==='menu'&&e.button===0)){e.preventDefault();dragging=true;lastPointer={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);}
- if(e.button===0&&e.pointerType!=='touch'&&state==='playing'){keys.add('Mouse0');attack(players[0]);}
+ if(e.button===0&&e.pointerType!=='touch'&&state==='playing'){keys.add('Mouse0');if(pistolMode&&players[0]?.def.id==='deadpool')firePistol(players[0]);else attack(players[0]);}
 });
 window.addEventListener('pointerup',e=>{if(e.button===0)keys.delete('Mouse0');if(e.button===2)keys.delete('Mouse2');dragging=false;});
 canvas.addEventListener('pointercancel',()=>{keys.delete('Mouse0');keys.delete('Mouse2');dragging=false;});
