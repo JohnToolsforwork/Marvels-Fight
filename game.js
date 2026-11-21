@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121233446';
-import {startUpdater} from './update.js?v=20261121233446';
-import {createCivilians} from './civilians.js?v=20261121233446';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121233446';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121233446';
-import {createWorld} from './world.js?v=20261121233446';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121233446';
-import {createDuel} from './pvp.js?v=20261121233446';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121233446';
-import {updateNPCFlight} from './npc-flight.js?v=20261121233446';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121233446';
+import {music} from './music.js?v=20261121233610';
+import {startUpdater} from './update.js?v=20261121233610';
+import {createCivilians} from './civilians.js?v=20261121233610';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121233610';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121233610';
+import {createWorld} from './world.js?v=20261121233610';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121233610';
+import {createDuel} from './pvp.js?v=20261121233610';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121233610';
+import {updateNPCFlight} from './npc-flight.js?v=20261121233610';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121233610';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();

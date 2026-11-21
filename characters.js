@@ -222,6 +222,7 @@ export function createCharacter(idOrDef){
   oval(body,exposed?face:suit,0,2.12,0,(slenderSpider?.16:.19)*(chunky?1.3:1),.1,(slenderSpider?.15:.17)*(chunky?1.3:1));
   const chestZ=slenderSpider?.231:feminine?.242:bodyProfile==='agile'?.262:.284;
   const legs=[],arms=[],hands=[],fingers=[],knees=[];
+  const K0=(slenderSpider?.86:feminine?.92:chunky?1.3:1);
   for(const side of [-1,1]){
     const leg=group(body,side*(slenderSpider?.157:feminine?.175:.19),1.22,0);legs.push(leg);
     oval(leg,legMat,0,.02,0,.168*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.15*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.168*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
@@ -244,6 +245,7 @@ export function createCharacter(idOrDef){
     oval(elbow,bareMassive?face:suit,0,.005,.005,.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.1*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     mesh(geo.lowerLimb,bareMassive?face:suit,elbow,0,-.16,.01,slenderSpider?.093:feminine?.095:chunky?.13:.107,.205,slenderSpider?.097:feminine?.095:.11);
     mesh(geo.gauntlet,bareMassive?face:gloveMat,elbow,0,-.3,.015,slenderSpider?.099:feminine?.10:chunky?.133:.112,.075,slenderSpider?.102:.115);
+    if(!['hulk','abomination','venom','ironman','ultron','doom','thanos','antman','vision','wanda','spiderman','deadpool'].includes(id)&&!id.startsWith('civilian'))mesh(geo.gauntlet,accent,elbow,0,-.31,.015,.106*K0,.045,.114*K0).name='Wrist band';
     const hand=group(elbow,0,-.41,.025);hands.push(hand);
     oval(elbow,bareMassive?face:gloveMat,0,-.385,.02,.088*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.075*(slenderSpider?.86:feminine?.92:chunky?1.3:1),.088*(slenderSpider?.86:feminine?.92:chunky?1.3:1));
     if(slenderSpider)hand.scale.set(.91,.95,.94);
@@ -381,6 +383,26 @@ export function createCharacter(idOrDef){
     accessories.cape=cape(body,'#642339',.78,1.15);
     for(const s of [-1,1])panel(body,mat('#a73c50'),[[s*.30,1.91],[s*.12,1.57],[s*.17,1.31],[s*.22,1.55]],.226);
     accessories.magic=hands.map(h=>oval(h,mat('#ff6479',.05,.35,'#b22d57'),0,-.04,.14,.075,.075,.075));
+    // Mooier: tiara, kraag, jaspanden, gouden armbanden, vollere golvende haren en een gloeiende riemgesp.
+    {
+      const ruby=mat('#ff3f63',.2,.25,'#d01c45'),leather=mat('#6f1a30',.12,.5),tiaraM=mat('#e2b35a',.8,.3);
+      const coatMat=new THREE.MeshStandardMaterial({color:'#7b2038',roughness:.62,metalness:.06,side:THREE.DoubleSide});
+      const tail=new THREE.MeshStandardMaterial({color:'#5a1628',roughness:.65,side:THREE.DoubleSide});
+      curve(head,tiaraM,[[-.24,.2,.17],[-.13,.31,.225],[0,.28,.255],[.13,.31,.225],[.24,.2,.17]],.028);
+      for(const [x,h2] of [[-.13,.11],[0,.16],[.13,.11]]){const sp=mesh(geo.cone,tiaraM,head,x,.31+h2*.4,.245,.032,h2,.032);sp.rotation.x=.22;}
+      oval(head,ruby,0,.255,.268,.036,.04,.026);
+      for(const s of [-1,1])panel(body,leather,[[s*.07,2.17],[s*.25,2.13],[s*.30,1.97],[s*.12,1.94]],.262);
+      panel(body,coatMat,[[-.3,1.3],[.3,1.3],[.27,.66],[0,.5],[-.27,.66]],-.2);
+      for(const s of [-1,1]){panel(body,tail,[[s*.34,1.3],[s*.16,1.3],[s*.2,.72],[s*.38,.8]],.2);}
+      box(body,tiaraM,0,1.235,.232,.13,.085,.028);oval(body,ruby,0,1.235,.252,.03,.03,.012);
+      for(const el of arms.map(a2=>a2.userData.elbow))mesh(geo.gauntlet,tiaraM,el,0,-.31,.015,.118,.05,.128);
+      const hr=mat('#9c3b2e',.015,.8);
+      for(const side of [-1,1]){
+        curve(head,hr,[[side*.25,.1,.0],[side*.32,-.14,.03],[side*.31,-.4,.02],[side*.27,-.64,-.05]],.052);
+        curve(head,hr,[[side*.27,.02,-.1],[side*.34,-.24,-.1],[side*.31,-.54,-.14],[side*.24,-.72,-.16]],.046);
+      }
+      oval(head,hr,0,-.32,-.2,.27,.46,.13);
+    }
   }else if(id==='thanos'){
     // Bald purple crown, broad ridged chin, navy armour and large gold guards.
     panel(body,gold,[[-.43,2.035],[.43,2.035],[.33,1.82],[.14,1.73],[0,1.84],[-.14,1.73],[-.33,1.82]],.30);
