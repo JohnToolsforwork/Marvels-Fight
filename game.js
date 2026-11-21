@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121204858';
-import {startUpdater} from './update.js?v=20261121204858';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204858';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121204858';
-import {createWorld} from './world.js?v=20261121204858';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204858';
-import {createDuel} from './pvp.js?v=20261121204858';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204858';
-import {updateNPCFlight} from './npc-flight.js?v=20261121204858';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204858';
+import {music} from './music.js?v=20261121205028';
+import {startUpdater} from './update.js?v=20261121205028';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121205028';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121205028';
+import {createWorld} from './world.js?v=20261121205028';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121205028';
+import {createDuel} from './pvp.js?v=20261121205028';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121205028';
+import {updateNPCFlight} from './npc-flight.js?v=20261121205028';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121205028';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -472,7 +472,7 @@ function jump(a){if(!canAct()||!a||a.dead||a.stun>0)return;if(a.flying){a.flyPul
 function dodge(a){if(!canAct()||!a||a.dead||a.stun>0||a.dashCooldown>0)return;a.dashDirection.copy(a.moveVelocity);if(a.dashDirection.lengthSq()<.1)a.dashDirection.set(Math.sin(a.group.rotation.y),0,Math.cos(a.group.rotation.y));a.dashDirection.normalize();a.dashRemaining=.16;a.dashCooldown=2.4;a.invulnerable=Math.max(a.invulnerable,.22);particles(a.group.position.clone().add(new THREE.Vector3(0,.15,0)),effectColors[a.def.id],8);}
 function controlActor(a,index,dt){
  const p2=index===1;let x=0,z=0;
- const turn=(keys.has(p2?'Numpad4':'KeyJ')?1:0)-(keys.has(p2?'Numpad6':'KeyL')?1:0);cameraStates[index].yaw+=turn*dt*2.2;if(!p2)cameraStates[index].pitch=clamp(cameraStates[index].pitch+((keys.has('KeyI')?1:0)-(keys.has('KeyK')?1:0))*dt,.1,.9);
+ const turn=(keys.has(p2?'Numpad4':'KeyJ')?1:0)-(keys.has(p2?'Numpad6':'KeyL')?1:0);cameraStates[index].yaw+=turn*dt*2.2;if(!p2)cameraStates[index].pitch=clamp(cameraStates[index].pitch+((keys.has('KeyI')?1:0)-(keys.has('KeyK')?1:0))*dt,.24,.68);
  if(keys.has(p2?'ArrowLeft':'KeyA')||(!p2&&touch.has('left')))x--;
  if(keys.has(p2?'ArrowRight':'KeyD')||(!p2&&touch.has('right')))x++;
  if(keys.has(p2?'ArrowUp':'KeyW')||(!p2&&touch.has('up')))z--;
@@ -669,7 +669,7 @@ window.addEventListener('pointerup',e=>{if(e.button===0)keys.delete('Mouse0');if
 canvas.addEventListener('pointercancel',()=>{keys.delete('Mouse0');keys.delete('Mouse2');dragging=false;});
 canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault();});
 window.addEventListener('pointermove',e=>{
- if(dragging){const dx=e.clientX-lastPointer.x,dy=e.clientY-lastPointer.y;if(state==='menu')menuOrbit-=dx*.006;else {cameraStates[0].yaw-=dx*.006;cameraStates[0].pitch=clamp(cameraStates[0].pitch+dy*.003,.1,.9);}lastPointer={x:e.clientX,y:e.clientY};}
+ if(dragging){const dx=e.clientX-lastPointer.x,dy=e.clientY-lastPointer.y;if(state==='menu')menuOrbit-=dx*.006;else {cameraStates[0].yaw-=dx*.006;cameraStates[0].pitch=clamp(cameraStates[0].pitch+dy*.003,.24,.68);}lastPointer={x:e.clientX,y:e.clientY};}
  if(state==='playing'&&e.target===canvas){const w=mode==='pvp'?width/2:width;pointer.set(e.clientX/w*2-1,-e.clientY/height*2+1);raycaster.setFromCamera(pointer,cameras[0]);if(raycaster.ray.direction.y<-.02&&raycaster.ray.intersectPlane(groundPlane,aimPoint)){const me=players[0];if(me){const dx=aimPoint.x-me.group.position.x,dz=aimPoint.z-me.group.position.z,d=Math.hypot(dx,dz);if(d>45){aimPoint.x=me.group.position.x+dx/d*45;aimPoint.z=me.group.position.z+dz/d*45;}}pointerKnown=true;}}
 });
 canvas.addEventListener('wheel',e=>{if(state!=='playing')return;e.preventDefault();cameraStates[0].distance=clamp(cameraStates[0].distance+e.deltaY*.008,4.5,18);},{passive:false});
