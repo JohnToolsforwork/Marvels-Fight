@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121212842';
-import {startUpdater} from './update.js?v=20261121212842';
-import {createCivilians} from './civilians.js?v=20261121212842';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121212842';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121212842';
-import {createWorld} from './world.js?v=20261121212842';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121212842';
-import {createDuel} from './pvp.js?v=20261121212842';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121212842';
-import {updateNPCFlight} from './npc-flight.js?v=20261121212842';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121212842';
+import {music} from './music.js?v=20261121213238';
+import {startUpdater} from './update.js?v=20261121213238';
+import {createCivilians} from './civilians.js?v=20261121213238';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121213238';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121213238';
+import {createWorld} from './world.js?v=20261121213238';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121213238';
+import {createDuel} from './pvp.js?v=20261121213238';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121213238';
+import {updateNPCFlight} from './npc-flight.js?v=20261121213238';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121213238';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -525,12 +525,41 @@ function controlActor(a,index,dt){
  const vx=a.dashRemaining>0?a.dashDirection.x*25:a.moveVelocity.x,vz=a.dashRemaining>0?a.dashDirection.z*25:a.moveVelocity.z;
  const moved=slideMove(a.group.position,vx*dt,vz*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));a.moving=moved>.001;a.moveSpeed=moved/Math.max(dt,.001);if(a.attackAnim<.4)face(a,vx,vz,1-Math.exp(-dt*18));
 }
+// Slim lopen: om obstakels heen, om elkaar heen, en vrijkomen als je vastzit.
+function steerAround(a,d){
+ const p=a.group.position,h=bodyHeight(a);let sx=0,sz=0;
+ for(const b of actors){
+  if(b===a||b.dead||b.active===false||Math.abs(p.y-b.group.position.y)>2)continue;
+  const dx=p.x-b.group.position.x,dz=p.z-b.group.position.z,dist=Math.hypot(dx,dz),min=(a.radius+b.radius)*1.55+.7;
+  if(dist>=min||dist<.001)continue;
+  const w=(min-dist)/min;sx+=dx/dist*w;sz+=dz/dist*w;
+  if((-dx*d.x-dz*d.z)/dist>.55){const side=a.avoidSide||(a.index%2?1:-1);sx+=-d.z*side*w*1.3;sz+=d.x*side*w*1.3;}
+ }
+ let vx=d.x+sx*1.5,vz=d.z+sz*1.5;const l=Math.hypot(vx,vz)||1;vx/=l;vz/=l;
+ const look=1.7,hit=(x,z)=>blocked(p.x+x*look,p.z+z*look,a.radius,p.y,world.colliders,world.bounds,h);
+ if(hit(vx,vz)){
+  const pref=a.avoidSide||1;
+  for(const ang of [.55,-.55,1.05,-1.05,1.6,-1.6,2.2,-2.2]){
+   const t=ang*pref,c=Math.cos(t),s2=Math.sin(t),nx=vx*c-vz*s2,nz=vx*s2+vz*c;
+   if(!hit(nx,nz)){vx=nx;vz=nz;a.avoidSide=ang>0?pref:-pref;break;}
+  }
+ }
+ return {x:vx,z:vz};
+}
 function followPath(a,target,speed,dt){
  a.pathAge-=dt;
  if(a.pathAge<=0||!a.path.length){a.path=nav(a.group.position,target);a.pathAge=.9+Math.random()*.5;}
  while(a.path.length&&Math.hypot(a.path[0].x-a.group.position.x,a.path[0].z-a.group.position.z)<1)a.path.shift();
  const next=a.path[0]||target,d=new THREE.Vector3(next.x-a.group.position.x,0,next.z-a.group.position.z);const len=d.length();if(len<.4)return;
- d.divideScalar(len);const blend=1-Math.exp(-dt*11);a.moveVelocity.x=THREE.MathUtils.lerp(a.moveVelocity.x,d.x*speed,blend);a.moveVelocity.z=THREE.MathUtils.lerp(a.moveVelocity.z,d.z*speed,blend);const movement=speed*dt;let moved=slideMove(a.group.position,a.moveVelocity.x*dt,a.moveVelocity.z*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));
+ d.divideScalar(len);
+ const st=steerAround(a,d);d.x=st.x;d.z=st.z;
+ const p=a.group.position;a.stuckT=(a.stuckT||0)+dt;
+ if(a.stuckT>.7){
+  const moved=Math.hypot(p.x-(a.stuckX??p.x),p.z-(a.stuckZ??p.z));
+  if(moved<.4){a.avoidSide=-(a.avoidSide||1);a.pathAge=0;const side=a.avoidSide;a.path=[{x:p.x-d.z*side*6,z:p.z+d.x*side*6}];}
+  a.stuckX=p.x;a.stuckZ=p.z;a.stuckT=0;
+ }
+ const blend=1-Math.exp(-dt*11);a.moveVelocity.x=THREE.MathUtils.lerp(a.moveVelocity.x,d.x*speed,blend);a.moveVelocity.z=THREE.MathUtils.lerp(a.moveVelocity.z,d.z*speed,blend);const movement=speed*dt;let moved=slideMove(a.group.position,a.moveVelocity.x*dt,a.moveVelocity.z*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));
  if(moved<movement*.15){moved+=slideMove(a.group.position,-d.z*movement,d.x*movement,a.radius,world.colliders,world.bounds,bodyHeight(a));a.pathAge=0;}
  a.moving=moved>.001;a.moveSpeed=moved/Math.max(dt,.001);if(a.attackAnim<.4)face(a,d.x,d.z,Math.min(1,dt*8));
 }
