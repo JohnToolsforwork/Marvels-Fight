@@ -15,7 +15,7 @@ export function createCivilians({scene,createCharacter,updateCharacter,slideMove
   function freeSpot(minDist=0,avoid=[]){
     const w=getWorld();if(!w)return null;const b=w.bounds;
     for(let i=0;i<40;i++){
-      const x=b.minX+12+Math.random()*(b.maxX-b.minX-24),z=b.minZ+12+Math.random()*(b.maxZ-b.minZ-24);
+      const lim=Math.min(b.maxX-12,230),x=(Math.random()*2-1)*lim,z=(Math.random()*2-1)*lim;
       if(blocked(x,z,.6,0,w.colliders,w.bounds))continue;
       if(avoid.some(p=>Math.hypot(p.x-x,p.z-z)<minDist))continue;
       return {x,z};

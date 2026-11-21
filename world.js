@@ -10,6 +10,7 @@ export const WORLDS = [
   { id: 'kamartaj', name: 'Kamar-Taj', subtitle: 'TEMPEL EN BIBLIOTHEEK', description: 'Een bergklooster met een open binnenplaats en toegankelijke tempel en bibliotheek.', sky: '#a7c7d6', fog: '#d3dedc' }
 ];
 
+const SIZE = 725; // halve breedte van de grote kaarten (2,5 x 5 = 12,5 x het oorspronkelijke speelveld)
 export function createWorld(scene, id = 'newyork') {
   const info = WORLDS.find(w => w.id === id) || WORLDS[0];
   id = info.id;
@@ -135,7 +136,7 @@ export function createWorld(scene, id = 'newyork') {
 
   // Buiten het oorspronkelijke speelveld (58) bouwen we de rest van de 2,5x grotere kaart:
   // blokken met straten ertussen, zodat je er altijd omheen kunt lopen.
-  const spawnZones = id!=='avengers' ? [{x:0,z:0},{x:-100,z:-100},{x:100,z:-100},{x:-100,z:100},{x:100,z:100}] : null;
+  const ZC = Math.round(SIZE*.55), spawnZones = id!=='avengers' ? [{x:0,z:0},{x:-ZC,z:-ZC},{x:ZC,z:-ZC},{x:-ZC,z:ZC},{x:ZC,z:ZC}] : null;
   // Een echt gebouw: sokkel, kroonlijst, ramen op alle vier de zijden en een deur met afdak.
   function building(x,z,w,h,d,wall,trim,windowMat,doorMat) {
     box(wall,x,h/2,z,w,h,d);
@@ -159,8 +160,8 @@ export function createWorld(scene, id = 'newyork') {
   function fillRing(kind) {
     const groundCol={newyork:'#6b7078',wakanda:'#4e8a5c',asgard:'#a9915a',kamartaj:'#8b7d62',titan:'#a8653a',savage:'#3f7a46'}[kind]||'#777';
     // Alleen buiten het oude speelveld, en iets lager dan bestaande vloeren: voorkomt knipperende (z-fighting) vlakken.
-    if(kind!=='titan'&&kind!=='savage'){const fg=mat('fillground'+kind,groundCol);
-      box(fg,111,-.13,0,108,.1,330);box(fg,-111,-.13,0,108,.1,330);box(fg,0,-.13,111,114,.1,108);box(fg,0,-.13,-111,114,.1,108);}
+    if(kind!=='titan'&&kind!=='savage'){const fg=mat('fillground'+kind,groundCol),half=boundary+30,mid=(57+half)/2,wid=half-57;
+      box(fg,mid,-.13,0,wid,.1,half*2);box(fg,-mid,-.13,0,wid,.1,half*2);box(fg,0,-.13,mid,114,.1,wid);box(fg,0,-.13,-mid,114,.1,wid);}
     const wall1=mat('fw1'+kind,{newyork:'#8c93a0',wakanda:'#b8a37a',asgard:'#d2b46a',kamartaj:'#a66a4a',titan:'#7e4a30',savage:'#6e6a5a'}[kind]||'#888');
     const wall2=mat('fw2'+kind,{newyork:'#5d7a92',wakanda:'#7a5bb8',asgard:'#e8d28f',kamartaj:'#8e7a56',titan:'#a8653a',savage:'#8c8a78'}[kind]||'#666');
     for(let gx=-132;gx<=132;gx+=22)for(let gz=-132;gz<=132;gz+=22) {
@@ -175,11 +176,25 @@ export function createWorld(scene, id = 'newyork') {
       else if(kind==='titan') {if(r>.5){const h=6+rnd()*16;mountain(x,z,w*1.6,h*1.6,d*1.6,wall1);}else{const h=5+rnd()*9;cyl(wall2,x,h/2,z,1.6,h);box(wall2,x,h+.5,z,4.2,1,4.2);}}
       else if(kind==='savage') {if(r>.35)tree(x,z,1.5+rnd()*1.4,r>.7?1:0);else {const h=3+rnd()*7;mountain(x,z,w*1.4,h*1.8,d*1.4,wall1);}}
     }
+    // Buitenste laag van de enorme kaart: grotere blokken met brede straten ertussen, zonder ramen (voor de snelheid).
+    const H=boundary-14;
+    for(let gx=-Math.floor(H/66)*66;gx<=H;gx+=66)for(let gz=-Math.floor(H/66)*66;gz<=H;gz+=66) {
+      if(Math.abs(gx)<=165&&Math.abs(gz)<=165)continue;
+      if(spawnZones&&spawnZones.some(q=>Math.abs(gx-q.x)<70&&Math.abs(gz-q.z)<70))continue;
+      const x=gx+(rnd()-.5)*10,z=gz+(rnd()-.5)*10,w=22+rnd()*20,d=22+rnd()*20,r=rnd(),near=Math.hypot(x,z)<330;
+      if(kind==='titan') {mountain(x,z,w*2.2,20+rnd()*50,d*2.2,r>.5?wall1:wall2);}
+      else if(kind==='savage') {if(r>.4){for(let k=0;k<3;k++)tree(x+(rnd()-.5)*30,z+(rnd()-.5)*30,3+rnd()*2.5,r>.7?1:0);}else mountain(x,z,w*2,15+rnd()*40,d*2,wall1);}
+      else {
+        const h=22+rnd()*(kind==='kamartaj'?20:68);
+        if(near)building(x,z,w,h,d,r>.5?wall1:wall2,trim,kind==='asgard'?lit:glass,dark);
+        else {box(r>.5?wall1:wall2,x,h/2,z,w,h,d);box(trim,x,h+.4,z,w+.6,.8,d+.6,0,true);}
+      }
+    }
   }
 
   // Every environment has continuous ground. The limits are invisible solid boundaries,
   // not the edge of a platform.
-  const BIG=id!=='avengers',boundary=BIG?145:58;
+  const BIG=id!=='avengers',boundary=BIG?SIZE:58;
   colliders.push({minX:-1000,maxX:-boundary,minZ:-1000,maxZ:1000,height:1000},{minX:boundary,maxX:1000,minZ:-1000,maxZ:1000,height:1000},{minX:-1000,maxX:1000,minZ:-1000,maxZ:-boundary,height:1000},{minX:-1000,maxX:1000,minZ:boundary,maxZ:1000,height:1000});
 
   if(id==='newyork') {
@@ -532,7 +547,7 @@ export function createWorld(scene, id = 'newyork') {
     landmarks.push({name:'Trainingshal',x:0,z:0});
   } else if(id==='titan') {
     const rock=mat('titanrock','#8a5232'),dust=mat('titandust','#c98d5a');
-    box(mat('titanplain','#b8764a'),0,-.04,0,330,.08,330);
+    box(mat('titanplain','#b8764a'),0,-.04,0,SIZE*2+80,.08,SIZE*2+80);
     for(let i=0;i<10;i++){const a=i/10*Math.PI*2,x=Math.sin(a)*26,z=Math.cos(a)*26,h=5+rnd()*6;cyl(dust,x,h/2,z,1.3,h);box(dust,x,h+.4,z,3.4,.8,3.4);collision(x,z,2.6,2.6,h);}
     for(let i=0;i<14;i++){const x=(rnd()-.5)*100,z=(rnd()-.5)*100;if(Math.hypot(x,z)<14||Math.abs(z)>36&&Math.abs(x)<22)continue;box(rock,x,.9,z,3+rnd()*3,1.8,3+rnd()*3,rnd()*3);collision(x,z,4,4,1.8);}
     box(lightgold,0,.03,0,16,.06,16);label('TITAN',0,.1,0,12,3,{font:90,bg:'#8a5232',accent:'#ffcf8f',border:false}).rotation.x=-Math.PI/2;
@@ -540,7 +555,7 @@ export function createWorld(scene, id = 'newyork') {
     fillRing('titan');
   } else if(id==='savage') {
     const ruin=mat('ruin','#8d8f78');
-    box(mat('savagefloor','#3f7a46'),0,-.04,0,330,.08,330);box(mat('savagepath','#a89066'),0,.01,0,16,.04,110);box(mat('savagepath2','#a89066'),0,.012,0,110,.04,16);
+    box(mat('savagefloor','#3f7a46'),0,-.04,0,SIZE*2+80,.08,SIZE*2+80);box(mat('savagepath','#a89066'),0,.01,0,16,.04,110);box(mat('savagepath2','#a89066'),0,.012,0,110,.04,16);
     for(const [x,z] of [[-24,-24],[24,24],[-24,24],[24,-24]]){box(ruin,x,2.4,z,5,4.8,5);box(stone,x,5,z,6,.6,6);collision(x,z,5.2,5.2,5);}
     for(let i=0;i<30;i++){const x=(rnd()-.5)*110,z=(rnd()-.5)*110;if(Math.hypot(x,z)<16)continue;tree(x,z,1.2+rnd()*1.2,i%2);}
     landmarks.push({name:'Savage Land',x:0,z:0});

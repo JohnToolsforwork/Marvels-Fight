@@ -34,14 +34,28 @@ export function segmentBox(a,b,box,padding=0){
   return low;
 }
 export function clearSight(a,b,boxes,padding=0){return !boxes.some(box=>segmentBox(a,b,box,padding)!==false);}
-export function makeNavigator(boxes,bounds,actorHeight=2.5){
-  const cell=3,nx=Math.floor((bounds.maxX-bounds.minX)/cell),nz=Math.floor((bounds.maxZ-bounds.minZ)/cell);
+export function makeNavigator(boxes,bounds,actorHeight=2.5,cell=3){
+  const nx=Math.floor((bounds.maxX-bounds.minX)/cell),nz=Math.floor((bounds.maxZ-bounds.minZ)/cell);
   // The direct-route shortcut must obey the same grounded obstacle threshold
   // as movement; eye-level visibility would ignore low but solid barriers.
   const groundBoxes=boxes.filter(b=>(b.height??99)>.22&&(b.minY??0)<actorHeight-.05).map(b=>({...b,minY:0}));
   const point=(i)=>({x:bounds.minX+(i%nx+.5)*cell,z:bounds.minZ+(Math.floor(i/nx)+.5)*cell});
   const grid=new Uint8Array(nx*nz);
-  for(let i=0;i<grid.length;i++){const p=point(i);grid[i]=blocked(p.x,p.z,.75,0,boxes,bounds,actorHeight)?1:0;}
+  // Markeer geblokkeerde cellen per obstakel (snel, ook voor zeer grote kaarten).
+  {
+    const R=.75;
+    for(let ix=0;ix<nx;ix++)for(const iz of [0,nz-1])grid[iz*nx+ix]=1;
+    for(let iz=0;iz<nz;iz++)for(const ix of [0,nx-1])grid[iz*nx+ix]=1;
+    for(const b of boxes){
+      if(!((b.height??99)>.22&&(b.minY??0)<actorHeight-.05))continue;
+      const i0=Math.max(0,Math.floor((b.minX-R-bounds.minX)/cell)),i1=Math.min(nx-1,Math.floor((b.maxX+R-bounds.minX)/cell));
+      const j0=Math.max(0,Math.floor((b.minZ-R-bounds.minZ)/cell)),j1=Math.min(nz-1,Math.floor((b.maxZ+R-bounds.minZ)/cell));
+      for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+        const x=bounds.minX+(i+.5)*cell,z=bounds.minZ+(j+.5)*cell;
+        if(intersects(x,z,R,b))grid[j*nx+i]=1;
+      }
+    }
+  }
   const idx=p=>Math.max(0,Math.min(nz-1,Math.floor((p.z-bounds.minZ)/cell)))*nx+Math.max(0,Math.min(nx-1,Math.floor((p.x-bounds.minX)/cell)));
   const neighbors=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
   // Dichtstbijzijnde vrije cel (voor als start of doel tegen een gebouw aan staat).
@@ -70,8 +84,8 @@ export function makeNavigator(boxes,bounds,actorHeight=2.5){
     const gx=goal%nx,gz=Math.floor(goal/nx);
     const heuristic=i=>{const dx=Math.abs(i%nx-gx),dz=Math.abs(Math.floor(i/nx)-gz);return Math.max(dx,dz)+.414*Math.min(dx,dz);};
     cost[s]=0;prev[s]=-1;seen[s]=stamp;push(heuristic(s),s);
-    const done=new Uint8Array(0);let found=s,best=heuristic(s),iterations=0;const closed=new Set();
-    while(hf.length&&iterations++<9000){
+    const maxIter=Math.max(9000,Math.floor(n*.3));let found=s,best=heuristic(s),iterations=0;const closed=new Set();
+    while(hf.length&&iterations++<maxIter){
       const u=pop();if(closed.has(u))continue;closed.add(u);
       if(u===goal){found=u;break;}
       const h=heuristic(u);if(h<best){best=h;found=u;}

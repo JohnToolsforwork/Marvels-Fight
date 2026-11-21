@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121230317';
-import {startUpdater} from './update.js?v=20261121230317';
-import {createCivilians} from './civilians.js?v=20261121230317';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121230317';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121230317';
-import {createWorld} from './world.js?v=20261121230317';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121230317';
-import {createDuel} from './pvp.js?v=20261121230317';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121230317';
-import {updateNPCFlight} from './npc-flight.js?v=20261121230317';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121230317';
+import {music} from './music.js?v=20261121230631';
+import {startUpdater} from './update.js?v=20261121230631';
+import {createCivilians} from './civilians.js?v=20261121230631';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121230631';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121230631';
+import {createWorld} from './world.js?v=20261121230631';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121230631';
+import {createDuel} from './pvp.js?v=20261121230631';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121230631';
+import {updateNPCFlight} from './npc-flight.js?v=20261121230631';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121230631';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -27,7 +27,7 @@ const sun=new THREE.DirectionalLight(0xffe5c8,2.35);sun.position.set(-30,55,24);
 sun.shadow.camera.left=-42;sun.shadow.camera.right=42;sun.shadow.camera.top=42;sun.shadow.camera.bottom=-42;sun.shadow.camera.near=1;sun.shadow.camera.far=150;sun.shadow.bias=-.00016;sun.shadow.normalBias=.025;sun.shadow.radius=2.6;scene.add(sun,sun.target);
 const rim=new THREE.DirectionalLight(0xabcfff,1.35);rim.position.set(25,16,-32);scene.add(rim);
 const roomLights=new THREE.Group();scene.add(roomLights);
-const cameras=[new THREE.PerspectiveCamera(52,1,.25,500),new THREE.PerspectiveCamera(52,1,.25,500)];
+const cameras=[new THREE.PerspectiveCamera(52,1,.25,1800),new THREE.PerspectiveCamera(52,1,.25,1800)];
 const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 // Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
 const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
@@ -148,7 +148,7 @@ function resetActor(a,spawn){
  a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
- civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
+ civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds,2.5,Math.max(3,Math.round((world.bounds.maxX-world.bounds.minX)/290)));camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
  if(!actors.length){actors=ROSTER.map(makeActor);for(const a of actors)if(savedSkins[a.def.id])applySkin(a,savedSkins[a.def.id]);}
  const counters={heroes:0,villains:0};for(const a of actors){const s=world.spawns[a.def.team][counters[a.def.team]++];resetActor(a,s);}
  setAtmosphere(id);setupRoomLighting();world.setQuality?.(settings.high);
@@ -695,7 +695,7 @@ function steerAround(a,d){
 }
 function followPath(a,target,speed,dt){
  a.pathAge-=dt;
- if(a.pathAge<=0||!a.path.length){a.path=nav(a.group.position,target);a.pathAge=.9+Math.random()*.5;}
+ if(a.pathAge<=0||!a.path.length){a.path=nav(a.group.position,target);a.pathAge=(Math.hypot(target.x-a.group.position.x,target.z-a.group.position.z)>90?2.4:.9)+Math.random()*.5;}
  while(a.path.length&&Math.hypot(a.path[0].x-a.group.position.x,a.path[0].z-a.group.position.z)<1)a.path.shift();
  const next=a.path[0]||target,d=new THREE.Vector3(next.x-a.group.position.x,0,next.z-a.group.position.z);const len=d.length();if(len<.4)return;
  d.divideScalar(len);
@@ -753,7 +753,7 @@ function updateAI(a,dt){
  if(a.talking){a.talking=false;if(currentTalker===a){window.speechSynthesis?.cancel();currentTalker=null;dialogueUntil=elapsed;}}
  updateNPCFlight(a,dt,{canFly:FLIERS.has(a.def.id),enabled:true,distance,targetY:b.group.position.y,...npcFlightSpace(a,b)});
  const melee=['melee','hammer','tentacle'].includes(spec.kind),range=meleeRange(a),desired=melee?range*.72:range*.65;
- if(distance>desired||!canSee)followPath(a,b.group.position,a.def.speed*(mode==='explore'?.78:.88)*(a.slow>0?.5:1)*movementModifier(a),dt);
+ if(distance>desired||!canSee)followPath(a,b.group.position,a.def.speed*(mode==='explore'?.78:.88)*(a.slow>0?.5:1)*movementModifier(a)*(1+Math.min(1.7,Math.max(0,(distance-70)/110))),dt);
  else {a.moveVelocity.multiplyScalar(Math.exp(-dt*16));face(a,b.group.position.x-a.group.position.x,b.group.position.z-a.group.position.z,Math.min(1,dt*12));}
  if(a.def.id==='deadpool'&&distance>spec.range&&distance<=PISTOL.range&&canSee)firePistol(a);else if(distance<=range+.15&&canSee)attack(a);
  if(a.specialCooldown<=0&&a.specialThink<=0&&canSee){
