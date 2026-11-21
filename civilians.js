@@ -44,7 +44,10 @@ export function createCivilians({scene,createCharacter,updateCharacter,slideMove
   }
   function dispose(c){scene.remove(c.group);const i=list.indexOf(c);if(i>=0)list.splice(i,1);}
 
-  return {
+  const api={
+    autoHelp:true,
+    forceHelp(n){const cand=list.filter(x=>x.state==='walk'&&!x.needsHelp);for(let i=cand.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]];}for(const x of cand.slice(0,n))setHelp(x,true);},
+    helpCount(){return list.filter(x=>x.needsHelp).length;},
     spawn(count,avoid=[]){this.clear();for(let i=0;i<count;i++)make(avoid);respawnQueue=[];helpTimer=5;},
     clear(){while(list.length)dispose(list[0]);respawnQueue=[];},
     get count(){return list.length;},
@@ -63,7 +66,7 @@ export function createCivilians({scene,createCharacter,updateCharacter,slideMove
       const w=getWorld();if(!w)return;
       const villains=actors.filter(a=>a.def.team==='villains'&&!a.dead&&a.active!==false);
       helpTimer-=dt;
-      if(helpTimer<=0){
+      if(helpTimer<=0&&api.autoHelp!==false){
         helpTimer=10+Math.random()*8;
         const needing=list.filter(c=>c.needsHelp).length;
         if(needing<3){const cand=list.filter(c=>c.state==='walk'&&!c.needsHelp);if(cand.length){const c=cand[Math.floor(Math.random()*cand.length)];setHelp(c,true);say?.('Een burger heeft hulp nodig!');}}
@@ -100,4 +103,5 @@ export function createCivilians({scene,createCharacter,updateCharacter,slideMove
       for(let i=respawnQueue.length-1;i>=0;i--){respawnQueue[i]-=dt;if(respawnQueue[i]<=0){respawnQueue.splice(i,1);make(players.filter(Boolean).map(p=>({x:p.group.position.x,z:p.group.position.z})));}}
     },
   };
+  return api;
 }

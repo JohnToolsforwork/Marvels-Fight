@@ -141,3 +141,10 @@ select,input,textarea{-webkit-user-select:auto;user-select:auto}
 canvas{-webkit-user-select:none;user-select:none}
 canvas::selection{background:transparent!important}
 select,input,textarea{-webkit-user-select:auto;user-select:auto}
+#objective{position:absolute;left:50%;top:92px;transform:translateX(-50%);background:#0b1423e6;border:1px solid #d5ff4855;color:#e9f3ff;padding:7px 16px;border-radius:9px;font-size:13px;text-align:center;max-width:calc(100vw - 30px);backdrop-filter:blur(10px)}
+#cinema{position:fixed;inset:0;z-index:15;cursor:pointer}
+#cinema .cine-bar{position:absolute;left:0;right:0;height:12vh;background:#000;display:block;transition:height .4s}
+#cinema .top{top:0}#cinema .bottom{bottom:0}
+#cinema-text{position:absolute;left:50%;bottom:15vh;transform:translateX(-50%);width:min(760px,calc(100vw - 40px));text-align:center;font-size:clamp(18px,3vw,30px);line-height:1.35;color:#fff;text-shadow:0 2px 14px #000,0 0 3px #000;font-family:var(--heading)}
+#cinema-skip{position:absolute;right:18px;bottom:3vh;color:#9fb0c4;font-size:11px;letter-spacing:.6px}
+body.cinema #hud{opacity:.12}

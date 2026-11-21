@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="build" content="20261121214935">
+  <meta name="build" content="20261121215741">
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Speel Marvels Fight: een gratis 3D-fangame met 30 Marvel-personages. Verken zeven grote werelden, waaronder Avengers Tower en Kamar-Taj, speel teamstrijd of daag elkaar uit in lokale PvP-duels.">
   <meta name="robots" content="index,follow">
@@ -16,7 +16,7 @@
   <title>Marvels Fight — 3D-game met helden, slechteriken en PvP</title>
   <link rel="canonical" href="https://johntoolsforwork.github.io/Marvels-Fight/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261121214935">
+  <link rel="stylesheet" href="style.css?v=20261121215741">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Marvels Fight","url":"https://johntoolsforwork.github.io/Marvels-Fight/","description":"Gratis 3D-fangame met dertig Marvel-personages, zeven werelden, teamstrijd en lokale PvP voor twee spelers op hetzelfde apparaat.","inLanguage":"nl","gamePlatform":"Web browser","applicationCategory":"Game","genre":["Action","Adventure"],"playMode":["SinglePlayer","MultiPlayer"],"isAccessibleForFree":true}</script>
@@ -74,6 +74,7 @@
             <button class="mode-card" data-mode="battle100" aria-pressed="false"><strong>Race tot 100</strong><span>Eerste team met 100 punten</span></button>
             <button class="mode-card" data-mode="endless" aria-pressed="false"><strong>Eindeloos</strong><span>Punten tellen, geen winnaar</span></button>
             <button class="mode-card" data-mode="survival" aria-pressed="false"><strong>Overleven</strong><span>Golven, steeds sterker</span></button>
+            <button class="mode-card" data-mode="story" aria-pressed="false"><strong>Verhaal</strong><span>Stop misdaden als held</span></button>
             <button class="mode-card" data-mode="pvp" aria-pressed="false"><strong>PvP</strong><span>2 op dit scherm</span></button>
           </div>
           <p class="explore-note">Bij Verkennen vechten teams zelfstandig. Jij kunt rondlopen of meedoen.</p>
@@ -115,6 +116,7 @@
   </nav>
 
   <main id="hud" hidden aria-label="Spelinformatie">
+    <div id="objective" hidden aria-live="polite"></div>
     <div id="ko-counter" aria-live="polite">KO: 0</div>
     <div id="top-kills" aria-label="Top 3 met de meeste KO"></div>
     <section class="player-hud" aria-label="Jouw personage">
@@ -145,6 +147,7 @@
   </main>
 
   <aside id="dialogue" hidden aria-live="polite"><div id="dialogue-avatar" aria-hidden="true">❝</div><div><div class="dialogue-heading"><strong id="dialogue-speaker">Spider-Man</strong><span>IN JE BUURT</span></div><p id="dialogue-line"></p></div></aside>
+  <div id="cinema" hidden aria-live="polite"><i class="cine-bar top"></i><i class="cine-bar bottom"></i><p id="cinema-text"></p><small id="cinema-skip">Enter of klik om over te slaan</small></div>
   <div id="toast" hidden role="status"></div>
   <div id="round-banner" hidden role="status" aria-live="polite"></div>
 
@@ -159,5 +162,5 @@
   <div id="loading" role="status"><div class="loading-brand"><span class="marvel-wordmark">MARVELS</span><span>FIGHT</span></div><div class="loading-track"><i></i></div><p id="loading-text">De wereld wordt opgebouwd…</p></div>
   <div id="fatal" hidden role="alert"></div>
   <noscript><div class="noscript">Schakel JavaScript in om deze 3D-game te spelen.</div></noscript>
-  <script type="module" src="game.js?v=20261121214935"></script>
+  <script type="module" src="game.js?v=20261121215741"></script>
 </html>

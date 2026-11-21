@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121214935';
-import {startUpdater} from './update.js?v=20261121214935';
-import {createCivilians} from './civilians.js?v=20261121214935';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121214935';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121214935';
-import {createWorld} from './world.js?v=20261121214935';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121214935';
-import {createDuel} from './pvp.js?v=20261121214935';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121214935';
-import {updateNPCFlight} from './npc-flight.js?v=20261121214935';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121214935';
+import {music} from './music.js?v=20261121215741';
+import {startUpdater} from './update.js?v=20261121215741';
+import {createCivilians} from './civilians.js?v=20261121215741';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121215741';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121215741';
+import {createWorld} from './world.js?v=20261121215741';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121215741';
+import {createDuel} from './pvp.js?v=20261121215741';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121215741';
+import {updateNPCFlight} from './npc-flight.js?v=20261121215741';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121215741';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -32,6 +32,7 @@ const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 // Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
 const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
+let cutUntil=0,cutStart=0,cutLines=[],cutCb=null,cutIdx=-1,storyIndex=0,story=null;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
 let width=innerWidth,height=innerHeight,world,nav,worldId='newyork',team='heroes',selected='deadpool',p2id='sabretooth',mode='explore',koTotal=0,wave=0,waveBreak=0,survKills=0,state='menu',elapsed=0,matchTime=180,frameCount=0;
 let actors=[],players=[],shots=[],effects=[],selectedActor=null,dialogueUntil=0,nextDialogue=0,currentTalker=null,lastHud=0,toastUntil=0;
@@ -220,6 +221,8 @@ async function renderPortraits(){
  r.dispose();r.forceContextLoss();
 }
 function startGame(){
+ if(mode==='story')prepareStory();
+ $('rematch-button').textContent='Opnieuw spelen';if($('objective'))$('objective').hidden=true;civ.autoHelp=mode!=='story';
  music.setMood('battle');state='playing';duel=null;currentInterior='';keys.clear();touch.clear();activateAudio();window.speechSynthesis?.cancel();dialogueUntil=0;nextDialogue=elapsed+1.6;score.heroes=score.villains=0;matchTime=180;clearEffects();
  assignSpawns();
  for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.faceRot??(a.def.team==='heroes'?Math.PI:0)});
@@ -227,7 +230,7 @@ function startGame(){
  players.forEach((a,i)=>{a.player=i;a.marker.visible=true;a.marker.material.opacity=.9;a.marker.scale.setScalar(1.15);cameraStates[i].yaw=a.def.team==='heroes'?0:Math.PI;});
  $('menu').hidden=true;$('hud').hidden=false;$('result-modal').hidden=true;$('p2-hud').hidden=mode!=='pvp';$('split-divider').hidden=mode!=='pvp';$('dialogue').hidden=true;
  $('player-name').textContent=players[0].def.name;$('player-power').textContent=players[0].def.power;$('p2-name').textContent=players[1]?.def.name||'';
- $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
+ $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?'VERHAAL · HOOFDSTUK '+((storyIndex%CHAPTERS.length)+1):mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
  if($('scene-caption'))$('scene-caption').hidden=true;document.body.classList.add('in-game');document.body.classList.toggle('split-screen',mode==='pvp');resize();
  players.forEach((a,i)=>updateCamera(i,1,true));
  if(mode==='pvp'&&pvpFormat==='duel'){
@@ -235,16 +238,119 @@ function startGame(){
    duel=createDuel({players,onReset:resetDuelRound,onBanner:(text,meta)=>{if($('round-banner')){$('round-banner').textContent=text;$('round-banner').dataset.kind=meta.kind;$('round-banner').hidden=false;roundBannerUntil=elapsed+(meta.kind==='roundWin'?2.8:meta.kind==='suddenDeath'?3:1.05);}},onRoundEnd:(winner,wins)=>{players.forEach((a,i)=>score[a.def.team]=wins[i]);},onSuddenDeath:()=>players.forEach(a=>a.hp=1),onFinish:()=>finishMatch()});
    toast('1 tegen 1 · win twee rondes. Shift om te ontwijken.',4);
  }else if(mode==='survival')startSurvival();
+ else if(mode==='story')startStory();
  else toast(mode==='explore'?'De teams zoeken elkaar op. Verken de wereld of doe mee aan het gevecht.':mode==='endless'?'Eindeloos: de punten lopen door en er is geen winnaar. Ga naar het menu om te stoppen.':mode==='battle100'?'Eerste team met 100 punten wint. Shift om te ontwijken.':'Eerste team met 15 punten wint. Shift om te ontwijken.',5);
  if(duel)civ.clear();else civ.spawn(world.bounds.maxX>100?16:6,players.map(p=>({x:p.group.position.x,z:p.group.position.z})));
+ if(mode==='story'&&story){civ.forceHelp(story.need);storyProgress(true);}
  updateHud();
 }
+
+// ================= VERHAAL =================
+const CHAPTERS=[
+ {world:'newyork',title:'Overval in de stad',crooks:['electro','sabretooth','octopus'],allies:[],need:2,hp:.85,
+  intro:['New York. Het is nacht in het centrum.','Een bende maakt de straten onveilig.','Burgers zitten klem. Jij bent de enige die kan helpen.'],
+  start:'Ik hoor alarmen. Tijd om de stad te beschermen!',taunt:'Dit is onze stad nu, held!',allClear:'De boeven liggen er uit. Nu de burgers in nood redden!',
+  outro:['De straten zijn weer veilig.','Maar dit was pas het begin…']},
+ {world:'wakanda',title:'De bende slaat terug',crooks:['goblin','venom','mysterio','redskull'],allies:[],need:3,hp:1,
+  intro:['Wakanda. Een nieuwe bende heeft de stad bezet.','Ze nemen burgers gevangen en eisen losgeld.','Laat zien dat niemand boven de wet staat.'],
+  start:'Vier tegelijk. Dat is nog eens een uitdaging!',taunt:'Je komt te laat, held. Wij hebben de stad al!',allClear:'Alle boeven zijn verslagen. Red de laatste burgers!',
+  outro:['De bende is opgerold.','Maar iemand trok de touwtjes…']},
+ {world:'asgard',title:'De grote baas',crooks:['thanos','loki','hela'],allies:['ironman','thor'],need:2,hp:1,
+  intro:['Asgard. Het gouden rijk trilt op zijn grondvesten.','Thanos wil de macht en zijn trawanten houden burgers gevangen.','Je bent niet alleen. Iron Man en Thor vechten aan jouw kant.'],
+  start:'Dit is het! Samen stoppen we Thanos!',taunt:'Jullie zijn te laat. De macht is van mij!',allClear:'Thanos is verslagen! Red nu de laatste burgers!',
+  outro:['Thanos ligt geslagen op de grond.','De stad is gered. Jij bent een echte held!']},
+];
+function prepareStory(){
+ const d=ROSTER.find(r=>r.id===selected);if(d&&d.team!=='heroes')chooseCharacter('captain');
+ const ch=CHAPTERS[storyIndex%CHAPTERS.length];if(worldId!==ch.world)loadWorld(ch.world);
+}
+function playCinema(lines,cb){
+ cutLines=lines;cutCb=cb;cutStart=elapsed;cutIdx=-1;cutUntil=elapsed+3.6*lines.length;
+ $('cinema').hidden=false;document.body.classList.add('cinema');keys.clear();
+}
+function skipCinema(){if(cutsceneActive())cutUntil=elapsed;}
+function updateCinema(){
+ if(!cutLines.length)return;
+ if(elapsed<cutUntil){const i=Math.min(cutLines.length-1,Math.floor((elapsed-cutStart)/3.6));if(i!==cutIdx){cutIdx=i;$('cinema-text').textContent=cutLines[i];}return;}
+ $('cinema').hidden=true;document.body.classList.remove('cinema');const cb=cutCb;cutLines=[];cutCb=null;cutIdx=-1;cb?.();
+}
+function camCinema(dt){
+ const s=cameraStates[0];
+ if(cutsceneActive()){s.yaw+=dt*.32;s.pitch=.3;s.distance=Math.min(17,s.distance+dt*4);}
+ else if(s.distance>10.5)s.distance=Math.max(10.5,s.distance-dt*8);
+}
+function sayAs(actor,line,secs=4.5){
+ if(!actor)return;
+ currentTalker=actor;dialogueUntil=elapsed+secs;nextDialogue=dialogueUntil+3;
+ $('dialogue-speaker').textContent=actor.def.name;$('dialogue-line').textContent=line;$('dialogue').hidden=false;
+ const avatar=$('dialogue-avatar');avatar.replaceChildren();
+ if(portraits.has(actor.def.id)){const img=document.createElement('img');img.src=portraits.get(actor.def.id);img.alt='';img.style.cssText='width:60px;height:70px;object-fit:contain';avatar.append(img);}else avatar.textContent='✦';
+ if(settings.sound&&window.speechSynthesis){try{
+  const synth=window.speechSynthesis,id=actor.def.id,heavy=['hulk','abomination','thanos','venom','sabretooth'].includes(id),quick=['deadpool','spiderman','antman'].includes(id);
+  const u=new SpeechSynthesisUtterance(line);u.lang='nl-NL';u.rate=heavy?.87:quick?1.08:.98;u.pitch=heavy?.77:quick?1.12:['wanda','widow','captainmarvel','hela'].includes(id)?1.14:.97;u.volume=.85;
+  const voices=synth.getVoices().filter(v=>v.lang.toLowerCase().startsWith('nl'));if(voices[0])u.voice=voices[0];
+  synth.cancel();synth.speak(u);
+ }catch{}}
+}
+function startStory(){
+ const ch=CHAPTERS[storyIndex%CHAPTERS.length],me=players[0];
+ story={ch,total:ch.crooks.length,down:0,resc:0,need:ch.need};
+ const crooks=[],allies=[];
+ for(const a of actors){
+  if(a===me)continue;
+  if(a.def.team==='villains'&&ch.crooks.includes(a.def.id))crooks.push(a);
+  else if(a.def.team==='heroes'&&ch.allies.includes(a.def.id))allies.push(a);
+  else{a.active=false;a.dead=true;a.group.visible=false;a.respawn=0;}
+ }
+ const place=(a,x,z,face)=>{const p=freeNear(x,z,a.radius);a.group.position.set(p.x,0,p.z);a.spawn.set(p.x,0,p.z);a.group.rotation.y=Math.atan2(face.x-p.x,face.z-p.z);};
+ const meSpot={x:0,z:34};place(me,meSpot.x,meSpot.z,{x:0,z:-10});cameraStates[0].yaw=0;
+ allies.forEach((a,i)=>place(a,(i?1:-1)*4,38,{x:0,z:-10}));
+ crooks.forEach((a,i)=>{const ang=i/Math.max(1,crooks.length)*Math.PI*2,r=crooks.length>1?9:0;place(a,Math.cos(ang)*r,-10+Math.sin(ang)*r,meSpot);a.maxHp=Math.round(a.maxHp*ch.hp);a.hp=a.maxHp;});
+ story.crooks=crooks;
+ updateCamera(0,1,true);
+ playCinema(ch.intro,()=>{
+  sayAs(me,ch.start,4);
+  setTimeout(()=>{if(state==='playing'&&mode==='story'&&story&&crooks[0])sayAs(crooks[0],ch.taunt,4);},4200);
+  toast('Hoofdstuk '+((storyIndex%CHAPTERS.length)+1)+' · '+ch.title,4);
+ });
+}
+function storyProgress(initial=false){
+ if(!story)return;
+ const o=$('objective');o.hidden=false;
+ o.textContent='Boeven: '+story.down+'/'+story.total+'  ·  Burgers gered: '+Math.min(story.resc,story.need)+'/'+story.need;
+ if(initial)return;
+ if(story.down>=story.total&&story.resc>=story.need){storyWin();return;}
+ if(story.down>=story.total&&!story.saidClear){story.saidClear=true;sayAs(players[0],story.ch.allClear,4.5);}
+ if(story.resc>=story.need&&story.down<story.total&&!story.saidSaved){story.saidSaved=true;toast('Alle burgers zijn gered. Versla nu de laatste boeven!',3.5);}
+}
+function showResult(title,detail,btn){
+ state='result';keys.clear();window.speechSynthesis?.cancel();
+ $('result-title').textContent=title;$('result-detail').textContent=detail;$('rematch-button').textContent=btn;
+ $('result-modal').hidden=false;$('dialogue').hidden=true;if($('objective'))$('objective').hidden=true;resize();
+}
+function storyWin(){
+ if(!story||story.won)return;story.won=true;
+ const ch=story.ch,last=(storyIndex%CHAPTERS.length)===CHAPTERS.length-1,me=players[0];
+ if(me)me.invulnerable=60;
+ playCinema(ch.outro,()=>{
+  const n=storyIndex%CHAPTERS.length+1;
+  if(last){storyIndex=0;showResult('Verhaal voltooid!','Je hebt alle misdaden gestopt. De stad is veilig dankzij jou.','Opnieuw vanaf hoofdstuk 1');}
+  else{storyIndex++;showResult('Hoofdstuk '+n+' voltooid!',ch.title+' · volgende: '+CHAPTERS[storyIndex%CHAPTERS.length].title,'Volgende hoofdstuk');}
+ });
+}
+function storyFail(){
+ if(!story||story.won||state!=='playing')return;
+ const n=storyIndex%CHAPTERS.length+1;
+ showResult('Mislukt.','Je werd verslagen in hoofdstuk '+n+'. Probeer het opnieuw.','Opnieuw proberen');
+}
+window.addEventListener('keydown',e=>{if(cutsceneActive()&&(e.code==='Enter'||e.code==='Space'||e.code==='Escape')){skipCinema();e.preventDefault();}},true);
+document.getElementById('cinema')?.addEventListener('click',skipCinema);
 function awardCivilian(a,text){
  if(!a||a.player<0||duel)return;
  a.kills=(a.kills||0)+1;koTotal++;score[a.def.team]++;toast(text,2.2);sound('special',.05);
 }
 const civ=createCivilians({scene,createCharacter,updateCharacter,slideMove,blocked,getWorld:()=>world,
- onRescue:(hero)=>awardCivilian(hero,'Burger gered! +1 KO'),onKill:(a)=>awardCivilian(a,'Burger uitgeschakeld +1 KO'),say:(t)=>toast(t,3)});
+ onRescue:(hero)=>{awardCivilian(hero,'Burger gered! +1 KO');if(mode==='story'&&story&&hero.player>=0){story.resc++;storyProgress();}},onKill:(a)=>awardCivilian(a,'Burger uitgeschakeld +1 KO'),say:(t)=>toast(t,3)});
 window.__mf={civilians:()=>civ.count};
 function freeNear(x,z,r){
  for(let ring=0;ring<8;ring++)for(let k=0;k<(ring?12:1);k++){
@@ -292,9 +398,10 @@ function resetDuelRound({round}){
  }
  $('mode-label').textContent='DUEL · RONDE '+round+' · BESTE VAN 3';
 }
-function canAct(){return state==='playing'&&(!duel||duel.canAct);}
+function cutsceneActive(){return elapsed<cutUntil;}
+function canAct(){return state==='playing'&&(!duel||duel.canAct)&&!cutsceneActive();}
 function showMenu(){
- civ.clear();music.setMood('calm');koTotal=0;for(const a of actors)a.kills=0;state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
+ cutUntil=0;cutLines=[];cutCb=null;story=null;if($('cinema'))$('cinema').hidden=true;document.body.classList.remove('cinema');if($('objective'))$('objective').hidden=true;civ.clear();music.setMood('calm');koTotal=0;for(const a of actors)a.kills=0;state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
  players=[];for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z});previewCharacter();clearEffects();resize();
 }
 
@@ -391,6 +498,16 @@ function damage(target,amount,attacker,slow=0){
    target.dead=true;target.healing=0;target.pendingAttack=null;target.pendingPistol=null;target.respawn=5;target.group.visible=false;burst(eye(target),target.def.team==='heroes'?'#5fbfff':'#ff6a86',2.5,'sphere',.7);
    attacker.kills=(attacker.kills||0)+1;if(attacker.player>=0&&target.player<0)koTotal++;
    if(duel){duel.knockout(target.player);return;}
+   if(mode==='story'){
+     if(target.player>=0){storyFail();return;}
+     if(target.def.team==='villains'&&story){
+       if(attacker.player>=0)toast('KO · '+target.def.name,2);
+       story.down++;
+       if(story.down===1&&story.total>1)sayAs(players[0],'Eén is neergegaan. Er zijn er nog meer!',3.5);
+       storyProgress();
+     }
+     return;
+   }
    if(mode==='survival'){
      if(target.player>=0){finishMatch();return;}
      survKills++;score[attacker.def.team]=survKills;if(attacker.player>=0)toast('KO · '+target.def.name,2);
@@ -619,7 +736,7 @@ function updateActors(dt){
    }
    a.attackAnim=Math.max(0,a.attackAnim-dt*3);a.pistolAnim=Math.max(0,a.pistolAnim-dt*2.8);a.hurt=Math.max(0,a.hurt-dt);
    if(a.dead){
-     if(state==='playing'&&!duel&&mode!=='survival'){a.respawn-=dt;if(a.respawn<=0){const player=a.player;resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.def.team==='heroes'?Math.PI:0});a.player=player;a.invulnerable=2;burst(eye(a),effectColors[a.def.id],2.5,'sphere',.8);}}
+     if(state==='playing'&&!duel&&mode!=='survival'&&mode!=='story'){a.respawn-=dt;if(a.respawn<=0){const player=a.player;resetActor(a,{x:a.spawn.x,z:a.spawn.z,rotation:a.def.team==='heroes'?Math.PI:0});a.player=player;a.invulnerable=2;burst(eye(a),effectColors[a.def.id],2.5,'sphere',.8);}}
      continue;
    }
    if(canAct()&&a.healing>0){const time=Math.min(dt,a.healing);a.hp=Math.min(a.maxHp,a.hp+time*12);a.healing=Math.max(0,a.healing-time);}
@@ -692,7 +809,7 @@ function updateHud(){
  if($('top-kills')){const top=actors.filter(a=>a.kills>0).sort((x,y)=>y.kills-x.kills).slice(0,3);$('top-kills').innerHTML='<b>TOP 3 KO</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+a.kills;$('top-kills').append(s);});}
  if(state==='menu')return;
  players.forEach((a,i)=>{const bar=$(i?'p2-health-fill':'health-fill'),txt=$(i?'p2-health-text':'health-text');bar.style.width=(a.hp/a.maxHp*100)+'%';txt.textContent=a.dead?(duel?'Ronde afgelopen':'Terug in '+Math.ceil(a.respawn)+' s'):Math.ceil(a.hp)+' / '+a.maxHp;});
- $('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='explore'||mode==='endless'||mode==='battle100'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
+ $('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;const shownTime=duel?duel.remaining:matchTime;$('match-timer').textContent=duel?.phase==='countdown'?Math.ceil(duel.countdown):mode==='survival'?'G'+wave:mode==='story'||mode==='explore'||mode==='endless'||mode==='battle100'?'∞':Math.floor(Math.max(0,shownTime)/60)+':'+String(Math.floor(Math.max(0,shownTime)%60)).padStart(2,'0');
  const a=players[0];if(a){const span=$('special-button').querySelector('span');span.textContent=a.specialCooldown>0?Math.ceil(a.specialCooldown)+' s':a.def.id==='antman'?(a.nextPym==='grow'?'Groeien':'Krimpen'):a.def.special;$('special-button').disabled=a.dead||a.specialCooldown>0;$('special-button').style.setProperty('--cooldown',Math.min(1,a.specialCooldown/8));}
  const p=players[0];if(p){$('pistol-button').hidden=p.def.id!=='deadpool';$('pistol-button').disabled=p.dead;$('camera-input-hint').textContent=p.def.id==='deadpool'?'Camera: middelste muisknop slepen of J / L':'Camera: rechts of midden slepen, of J / L';$('flight-button').hidden=!FLIERS.has(p.def.id);$('flight-button').querySelector('span').textContent=p.flying?'Landen':'Vliegen';$('descend-button').hidden=!p.flying;const inside=(world.interiors||[]).find(r=>p.group.position.x>r.minX&&p.group.position.x<r.maxX&&p.group.position.z>r.minZ&&p.group.position.z<r.maxZ&&p.group.position.y<(r.ceiling||6));const place=inside?inside.name:worldNames[worldId];$('area-label').textContent=place+(p.flying?' · '+Math.round(p.group.position.y)+' m hoogte':'');if(inside&&currentInterior!==inside.name)toast(inside.name+(worldId==='avengers'?' · verken de ruimtes via de open deuren.':' · loop door de open deur om weer naar buiten te gaan.'),3);currentInterior=inside?.name||'';}
  drawMinimap();
@@ -757,13 +874,14 @@ function frame(){
  for(let i=0;i<steps;i++){
   elapsed+=step;
   if(state==='playing'&&duel)duel.update(step);else if(state==='playing'&&mode==='survival'){if(waveBreak>0){waveBreak-=step;if(waveBreak<=0)nextWave();}}else if(state==='playing'&&(mode==='battle'||mode==='pvp')){matchTime-=step;if(matchTime<=0)finishMatch();}
-  world.update?.(step,elapsed);if(state==='playing'&&!duel)civ.update(step,{actors,players});updateActors(step);updateProjectiles(step);dialogue();
+  world.update?.(step,elapsed);if(cutsceneActive())keys.clear();else{if(state==='playing'&&!duel)civ.update(step,{actors,players});updateActors(step);}updateProjectiles(step);dialogue();
  }
+ updateCinema();
  if($('round-banner')&&elapsed>roundBannerUntil)$('round-banner').hidden=true;
  if(elapsed>toastUntil)$('toast').hidden=true;
  if(state==='menu'){
    const a=selectedActor.group.position,theta=menuOrbit+.28,distance=7.8*((selectedActor.rig.height||2.8)/2.8);menuCamera.position.set(a.x+Math.sin(theta)*distance,3.05,a.z+Math.cos(theta)*distance);menuCamera.lookAt(a.x,1.55,a.z);
- }else {updateCamera(0,dt);if(mode==='pvp')updateCamera(1,dt);}
+ }else {camCinema(dt);updateCamera(0,dt);if(mode==='pvp')updateCamera(1,dt);}
  updateSunShadow();
  previewHalo.visible=state==='menu';previewHalo.material.opacity=.3+Math.sin(elapsed*.9)*.08;damageVeil.style.opacity=state==='playing'?Math.max(0,(players[0]?.hurt||0))*.75:0;
  if(frameCount%3===0)updateLabels();if(elapsed-lastHud>.12){updateHud();lastHud=elapsed;}
