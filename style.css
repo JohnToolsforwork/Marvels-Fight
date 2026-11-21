@@ -135,3 +135,4 @@ html,body,#game-canvas,#hud{-webkit-user-select:none;user-select:none;-webkit-to
 #game-canvas{outline:none;-webkit-tap-highlight-color:transparent}
 #game-canvas::selection,body *::selection{background:transparent}
 select,input,textarea{-webkit-user-select:auto;user-select:auto}
+.skin-picker{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}.skin-label{font-size:9px;letter-spacing:1.4px;color:#8292a7;margin-right:4px}.skin-chip{border:1px solid #334359;background:#101927;color:#cfd9e6;font-size:11px;padding:6px 10px;border-radius:6px}.skin-chip:hover{border-color:#8299aa}.skin-chip.active{border-color:var(--accent);color:var(--accent);background:#202a20}

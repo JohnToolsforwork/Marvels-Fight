@@ -3,6 +3,20 @@ import * as THREE from './vendor/three.module.js';
 // Combat values are deliberately balanced for this fan game, not a canon ranking.
 const hero = (id,name,role,power,special,hp,speed,damage,color,accent,projectile,description,quotes) => ({id,name,team:'heroes',role,power,special,hp,speed,damage,color,accent,projectile,description,quotes});
 const villain = (...args) => ({...hero(...args),team:'villains'});
+// Skins: andere kleuren, soms sterker en soms zwakker dan het standaardpak (hp/dmg = vermenigvuldiger).
+export const SKINS = {
+  doom:[{id:'doombot',name:'Doom-bot',color:'#6b7480',accent:'#9aa5b1',hp:.75,dmg:1.1,note:'Minder levens, iets meer schade'},{id:'goddoom',name:'God Doom',color:'#f1f1ee',accent:'#e6c157',hp:1.25,dmg:1.15,note:'Sterker dan de standaard Doom'}],
+  spiderman:[{id:'ironspider',name:'Iron Spider',color:'#a8222f',accent:'#e0b24a',hp:1.15,dmg:1.05,note:'Gepantserd, iets sterker'},{id:'symbiote',name:'Zwart pak',color:'#16181d',accent:'#e8f1ff',hp:1.1,dmg:1.1,note:'Sterker, maar vraagt om aandacht'}],
+  ironman:[{id:'silver',name:'Silver Centurion',color:'#c9d0d8',accent:'#c43a3a',hp:1.1,dmg:1,note:'Extra pantser'},{id:'stealth',name:'Stealth',color:'#26282e',accent:'#4fb6ff',hp:.9,dmg:1.12,note:'Minder pantser, meer schade'}],
+  captain:[{id:'winter',name:'Winterpak',color:'#2d3a4f',accent:'#bcd1e6',hp:.95,dmg:1.1,note:'Iets meer schade'},{id:'classic',name:'Comic-klassiek',color:'#1f4d99',accent:'#d8262f',hp:1.05,dmg:1,note:'Het oude stripboekpak'}],
+  thor:[{id:'comic',name:'Comic-Thor',color:'#b03038',accent:'#e0c060',hp:1.05,dmg:.97,note:'Stripboekuitvoering'}],
+  hulk:[{id:'gray',name:'Grijze Hulk',color:'#8b8f95',accent:'#4a4d5a',hp:.9,dmg:1.15,note:'Minder levens, meer schade'},{id:'red',name:'Rode Hulk',color:'#b5352d',accent:'#5a2a3a',hp:.85,dmg:1.22,note:'Veel schade, minder levens'}],
+  wolverine:[{id:'brown',name:'Bruin pak',color:'#8a5a2b',accent:'#d9a21b',hp:1,dmg:1,note:'Het stripboekpak'},{id:'xforce',name:'X-Force',color:'#1a1d22',accent:'#c53030',hp:.95,dmg:1.1,note:'Zwart pak, meer schade'}],
+  venom:[{id:'carnage',name:'Carnage',color:'#b3202a',accent:'#2a0d12',hp:.9,dmg:1.18,note:'Veel schade, minder levens'}],
+  deadpool:[{id:'comic',name:'Comic-Deadpool',color:'#8a1c24',accent:'#15171c',hp:1,dmg:1,note:'Donkerder pak'}],
+};
+export function skinDef(def,skinId){const s=(SKINS[def.id]||[]).find(k=>k.id===skinId);return s?{...def,color:s.color,accent:s.accent}:def;}
+
 export const ROSTER = [
   hero('spiderman','Spider-Man','BEWEEGLIJK','Webschot','Webstorm',120,9.2,16,'#cf263d','#174a9d','#e9f5ff','Lenig, snel en altijd klaar met een web.', ['Hé! Zullen we de buurt een beetje veiliger maken?','Een plan? Ik dacht: eerst webslingeren, dan het plan.','Kijk uit voor die auto. Die staat er niet voor niets.']),
   hero('ironman','Iron Man','ENERGIE','Repulsor','Unibeam',150,7.7,21,'#b82b35','#e9b85d','#81e9ff','Gepantserde precisie met heldere repulsorstralen.', ['Pak en systemen: klaar voor actie.','Ik heb de stad gescand. Blijf bij het team.','Mooi pak, hè? Het kostte ook wel wat werk.']),

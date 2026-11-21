@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121204518';
-import {startUpdater} from './update.js?v=20261121204518';
-import {ROSTER,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204518';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121204518';
-import {createWorld} from './world.js?v=20261121204518';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204518';
-import {createDuel} from './pvp.js?v=20261121204518';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204518';
-import {updateNPCFlight} from './npc-flight.js?v=20261121204518';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204518';
+import {music} from './music.js?v=20261121204642';
+import {startUpdater} from './update.js?v=20261121204642';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121204642';
+import {SoftwareRenderer} from './software-renderer.js?v=20261121204642';
+import {createWorld} from './world.js?v=20261121204642';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121204642';
+import {createDuel} from './pvp.js?v=20261121204642';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121204642';
+import {updateNPCFlight} from './npc-flight.js?v=20261121204642';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121204642';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -140,11 +140,11 @@ function makeActor(def,index){
  return {def,rig,group,index,marker,shadow,labels,hp:def.hp,maxHp:def.hp,radius:baseRadius(def.id),vy:0,cooldown:0,specialCooldown:0,attackAnim:0,dead:false,respawn:0,hurt:0,slow:0,stun:0,invulnerable:0,speedBuff:0,moving:false,talking:false,nextTalk:0,nextAI:Math.random(),path:[],pathAge:0,aggro:0,lastAttacker:null,spawn:new THREE.Vector3(),wander:new THREE.Vector3(),nextWander:0,player:-1};
 }
 function resetActor(a,spawn){
- a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*(isLeader(a)?1.5:1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
+ a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
  clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);nav=makeNavigator(world.colliders,world.bounds);
- if(!actors.length)actors=ROSTER.map(makeActor);
+ if(!actors.length){actors=ROSTER.map(makeActor);for(const a of actors)if(savedSkins[a.def.id])applySkin(a,savedSkins[a.def.id]);}
  const counters={heroes:0,villains:0};for(const a of actors){const s=world.spawns[a.def.team][counters[a.def.team]++];resetActor(a,s);}
  setAtmosphere(id);setupRoomLighting();world.setQuality?.(settings.high);
  document.querySelectorAll('[data-world]').forEach(e=>{e.classList.toggle('active',e.dataset.world===id);e.setAttribute('aria-pressed',String(e.dataset.world===id));});
@@ -155,6 +155,33 @@ function previewCharacter(){
  if(selectedActor){selectedActor.group.position.copy(selectedActor.spawn);selectedActor.group.rotation.y=selectedActor.def.team==='heroes'?Math.PI:0;}
  selectedActor=actors.find(a=>a.def.id===selected);selectedActor.group.position.set(0,0,10);selectedActor.group.rotation.y=.16;selectedActor.marker.visible=false;
 }
+let savedSkins={};try{savedSkins=JSON.parse(localStorage.getItem('mf_skins')||'{}')||{};}catch{savedSkins={};}
+function applySkin(a,skinId){
+ const list=SKINS[a.def.id]||[],skin=list.find(k=>k.id===skinId)||null;
+ if((a.skin?.id||null)===(skin?.id||null))return;
+ const old=a.group,pos=old.position.clone(),rot=old.rotation.clone(),vis=old.visible,sc=old.scale.clone();
+ const rig=createCharacter(skinDef(a.def,skin?.id));setCharacterQuality(rig,settings.high);
+ const group=rig.group;group.position.copy(pos);group.rotation.copy(rot);group.scale.copy(sc);group.visible=vis;
+ group.add(a.marker);group.add(a.shadow);scene.add(group);scene.remove(old);
+ a.rig=rig;a.group=group;a.skin=skin;
+ const ratio=a.hp/a.maxHp;a.maxHp=Math.round(a.def.hp*(isLeader(a)?1.5:1)*(skin?.hp||1));a.hp=Math.max(1,Math.round(a.maxHp*ratio));
+}
+function chooseSkin(charId,skinId){
+ const a=actors.find(x=>x.def.id===charId);if(!a)return;
+ if(skinId)savedSkins[charId]=skinId;else delete savedSkins[charId];
+ try{localStorage.setItem('mf_skins',JSON.stringify(savedSkins));}catch{}
+ applySkin(a,skinId);if(selected===charId){renderSkins();previewCharacter();}
+}
+function renderSkins(){
+ const box=$('skin-picker');if(!box)return;box.replaceChildren();
+ const list=SKINS[selected]||[];box.hidden=!list.length;if(!list.length)return;
+ const label=document.createElement('span');label.className='skin-label';label.textContent='UITERLIJK';box.append(label);
+ const cur=savedSkins[selected]||'';
+ const mk=(id,name,title)=>{const b=document.createElement('button');b.type='button';b.className='skin-chip'+((cur===id)?' active':'');b.textContent=name;b.title=title;b.addEventListener('click',()=>chooseSkin(selected,id));box.append(b);};
+ mk('','Standaard','Het normale pak');for(const s of list)mk(s.id,s.name,s.note);
+ const d=ROSTER.find(x=>x.id===selected),sk=list.find(k=>k.id===cur);
+ $('stat-health').textContent=Math.round(d.hp*(sk?.hp||1));$('stat-power').textContent=Math.round(d.damage*(sk?.dmg||1));
+}
 function chooseCharacter(id){
  selected=id;const d=ROSTER.find(a=>a.id===id);team=d.team;
  $('character-name').textContent=d.name;$('character-role').textContent=d.role;$('character-power').textContent=d.id==='thor'?'Mjölnir · hamerslag':d.id==='widow'?'Elektrische wapenstok':d.power;$('character-description').textContent=d.description+(FLIERS.has(id)?' Druk op F om te vliegen.':'');
@@ -162,7 +189,7 @@ function chooseCharacter(id){
  $('stat-health').parentElement.style.setProperty('--stat',clamp(d.hp/270,0,1)*100+'%');$('stat-speed').parentElement.style.setProperty('--stat',clamp(d.speed/10,0,1)*100+'%');$('stat-power').parentElement.style.setProperty('--stat',clamp(d.damage/30,0,1)*100+'%');
  if($('selected-name'))$('selected-name').textContent=d.name;if($('selected-special'))$('selected-special').textContent=d.special;document.body.style.setProperty('--chosen-accent',d.team==='heroes'?'#82dcff':'#ff91a2');previewHalo.material.color.set(d.team==='heroes'?0x72dfff:0xff8297);
  document.querySelectorAll('.roster-card').forEach(e=>{e.classList.toggle('selected',e.dataset.id===id);e.setAttribute('aria-pressed',String(e.dataset.id===id));});
- previewCharacter();fillP2();
+ previewCharacter();fillP2();renderSkins();
 }
 function fillRoster(){
  $('roster').replaceChildren();
@@ -319,6 +346,7 @@ function attack(a){
 function damage(target,amount,attacker,slow=0){
  if(!canAct()||!canTarget(attacker,target)||target.invulnerable>0)return;
  if(mode==='survival'&&attacker.player<0)amount*=1+.06*(wave-1);
+ if(attacker.skin?.dmg)amount*=attacker.skin.dmg;
  if(duel){const spec=SPECS[attacker.def.id];amount*=clamp(34*spec.rate/attacker.def.damage,.6,1.4)*(['melee','hammer'].includes(spec.kind)?1.2:1);}
  if(attacker.player>=0)attacker.aggro=18;
  target.hp=Math.max(0,target.hp-amount);target.hurt=.22;target.aggro=12;target.lastAttacker=attacker;target.slow=Math.max(target.slow,slow);particles(eye(target),effectColors[attacker.def.id],5);
