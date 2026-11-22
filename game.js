@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122133345';
-import {startUpdater} from './update.js?v=20261122133345';
-import {createCivilians} from './civilians.js?v=20261122133345';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122133345';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122133345';
-import {createWorld} from './world.js?v=20261122133345';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122133345';
-import {createDuel} from './pvp.js?v=20261122133345';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122133345';
-import {updateNPCFlight} from './npc-flight.js?v=20261122133345';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122133345';
+import {music} from './music.js?v=20261122133616';
+import {startUpdater} from './update.js?v=20261122133616';
+import {createCivilians} from './civilians.js?v=20261122133616';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122133616';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122133616';
+import {createWorld} from './world.js?v=20261122133616';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122133616';
+import {createDuel} from './pvp.js?v=20261122133616';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122133616';
+import {updateNPCFlight} from './npc-flight.js?v=20261122133616';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122133616';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -1095,6 +1095,17 @@ function updateCamera(index,dt,snap=false){
  if(snap)c.position.copy(pos);else c.position.lerp(pos,1-Math.exp(-dt*12));
  if(!isThirdPersonCameraSafe(look,c.position,camColliders,characterHeight))c.position.lerp(pos,.6);
  c.lookAt(look);
+ // Zit de camera binnen in een personage (bijv. Hulk tegen een muur of boom)? Dan wordt dat personage tijdelijk onzichtbaar, zodat je er niet in "zit".
+ hideActorsAroundCamera(c.position,index);
+}
+function hideActorsAroundCamera(cp,key){
+ for(const o of actors){
+   if(o.camHidden==='menu'&&key!=='menu'){o.group.visible=true;o.camHidden=undefined;}
+   const oc=o.group.position,oh=(o.rig.height||2.82)*o.group.scale.y,dx=cp.x-oc.x,dz=cp.z-oc.z,dyy=cp.y-(oc.y+oh*.5);
+   const inside=Math.hypot(dx,dz)<Math.max(1.6,oh*.55)&&Math.abs(dyy)<oh*.62;
+   if(inside&&o.camHidden===undefined&&o.group.visible&&!o.dead){o.group.visible=false;o.camHidden=key;}
+   else if(!inside&&o.camHidden===key){o.group.visible=true;o.camHidden=undefined;}
+ }
 }
 function updateLabels(){
  const split=mode==='pvp'&&state!=='menu',vpWidth=split?width/2:width;
@@ -1192,7 +1203,7 @@ function frame(){
  if($('round-banner')&&elapsed>roundBannerUntil)$('round-banner').hidden=true;
  if(elapsed>toastUntil)$('toast').hidden=true;
  if(state==='menu'){
-   const a=selectedActor.group.position,theta=menuOrbit+.28,distance=7.8*((selectedActor.rig.height||2.8)/2.8);menuCamera.position.set(a.x+Math.sin(theta)*distance,3.05,a.z+Math.cos(theta)*distance);menuCamera.lookAt(a.x,1.55,a.z);
+   const a=selectedActor.group.position,theta=menuOrbit+.28,distance=7.8*((selectedActor.rig.height||2.8)/2.8);menuCamera.position.set(a.x+Math.sin(theta)*distance,3.05,a.z+Math.cos(theta)*distance);menuCamera.lookAt(a.x,1.55,a.z);hideActorsAroundCamera(menuCamera.position,'menu');
  }else {camCinema(dt);updateCamera(0,dt);if(mode==='pvp')updateCamera(1,dt);}
  updateSunShadow();
  previewHalo.visible=state==='menu';previewHalo.material.opacity=.3+Math.sin(elapsed*.9)*.08;damageVeil.style.opacity=state==='playing'?Math.max(0,(players[0]?.hurt||0))*.75:0;
