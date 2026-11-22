@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122175019';
-import {startUpdater} from './update.js?v=20261122175019';
-import {createCivilians} from './civilians.js?v=20261122175019';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122175019';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122175019';
-import {createWorld} from './world.js?v=20261122175019';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122175019';
-import {createDuel} from './pvp.js?v=20261122175019';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122175019';
-import {updateNPCFlight} from './npc-flight.js?v=20261122175019';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122175019';
+import {music} from './music.js?v=20261122175347';
+import {startUpdater} from './update.js?v=20261122175347';
+import {createCivilians} from './civilians.js?v=20261122175347';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122175347';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122175347';
+import {createWorld} from './world.js?v=20261122175347';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122175347';
+import {createDuel} from './pvp.js?v=20261122175347';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122175347';
+import {updateNPCFlight} from './npc-flight.js?v=20261122175347';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122175347';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -894,7 +894,7 @@ function updateProjectiles(dt){
 function finishMatch(){
  state='result';keys.clear();window.speechSynthesis?.cancel();const winner=score.heroes===score.villains?null:score.heroes>score.villains?'heroes':'villains';$('result-title').textContent=winner===null?'Gelijkspel.':winner==='heroes'?'De helden winnen.':'De slechteriken winnen.';$('result-detail').textContent=score.heroes+' – '+score.villains+' · '+worldNames[worldId];$('result-modal').hidden=false;$('dialogue').hidden=true;resize();
  if(mode==='survival'){let best=0;try{best=+localStorage.getItem('mf_best_wave')||0;if(wave>best){best=wave;localStorage.setItem('mf_best_wave',String(best));}}catch(e){}$('result-title').textContent='Gevallen in golf '+wave+'.';$('result-detail').textContent=survKills+' KO · record golf '+best+' · '+worldNames[worldId];}
- if(duel){$('result-title').textContent=players.find(a=>a.def.team===winner)?.def.name+' wint!';$('result-detail').textContent=duel.wins.join(' – ')+' rondes · '+worldNames[worldId];}
+ if(duel){const wi=duel.wins[0]===duel.wins[1]?-1:duel.wins[0]>duel.wins[1]?0:1;$('result-title').textContent=wi<0?'Gelijkspel.':(players[wi]?.def.name||'Speler '+(wi+1))+' wint!';$('result-detail').textContent=duel.wins.join(' – ')+' rondes · '+worldNames[worldId];}
 }
 
 function groundHeight(a,oldY){
