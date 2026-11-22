@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="build" content="20261122105633">
+  <meta name="build" content="20261122110055">
   <meta name="theme-color" content="#0a101b">
   <meta name="description" content="Speel Marvels Fight: een gratis 3D-fangame met 30 Marvel-personages. Verken zeven grote werelden, waaronder Avengers Tower en Kamar-Taj, speel teamstrijd of daag elkaar uit in lokale PvP-duels.">
   <meta name="robots" content="index,follow">
@@ -16,7 +16,7 @@
   <title>Marvels Fight — 3D-game met helden, slechteriken en PvP</title>
   <link rel="canonical" href="https://johntoolsforwork.github.io/Marvels-Fight/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261122105633">
+  <link rel="stylesheet" href="style.css?v=20261122110055">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Marvels Fight","url":"https://johntoolsforwork.github.io/Marvels-Fight/","description":"Gratis 3D-fangame met dertig Marvel-personages, zeven werelden, teamstrijd en lokale PvP voor twee spelers op hetzelfde apparaat.","inLanguage":"nl","gamePlatform":"Web browser","applicationCategory":"Game","genre":["Action","Adventure"],"playMode":["SinglePlayer","MultiPlayer"],"isAccessibleForFree":true}</script>
@@ -79,7 +79,7 @@
             <button class="mode-card" data-mode="pvp" aria-pressed="false"><strong>PvP</strong><span>2 op dit scherm</span></button>
           </div>
           <p class="explore-note">Bij Verkennen vechten teams zelfstandig. Jij kunt rondlopen of meedoen.</p>
-          <div id="story-setup" hidden><p>Kies een deel van het verhaal:</p><div class="part-row"><button type="button" class="part-btn active" data-part="1" aria-pressed="true"><strong>Deel 1</strong><span>Straten · 3 hoofdstukken</span></button><button type="button" class="part-btn" data-part="2" aria-pressed="false"><strong>Deel 2</strong><span>Avengers Tower · Venom</span></button></div><p class="story-note">In deel 2 kun je niet Spider-Man zijn.</p></div>
+          <div id="story-setup" hidden><p>Kies een deel van het verhaal:</p><div class="part-row"><button type="button" class="part-btn active" data-part="1" aria-pressed="true"><strong>Deel 1</strong><span>Straten</span></button><button type="button" class="part-btn" data-part="2" aria-pressed="false"><strong>Deel 2</strong><span>Venom</span></button><button type="button" class="part-btn" data-part="3" aria-pressed="false"><strong>Deel 3</strong><span>Thanos</span></button><button type="button" class="part-btn" data-part="4" aria-pressed="false"><strong>Deel 4</strong><span>Multiversum</span></button><button type="button" class="part-btn" data-part="5" aria-pressed="false"><strong>Deel 5</strong><span>De verrader</span></button></div><p class="story-note">In deel 2 kun je niet Spider-Man zijn.</p></div>
           <div id="pvp-setup" hidden>
             <div class="pvp-format-picker" role="group" aria-label="PvP-spelvorm">
               <button class="active" data-pvp-format="duel" aria-pressed="true"><strong>Duel · 1 tegen 1</strong><span>Win twee rondes</span></button>
@@ -151,6 +151,7 @@
 
   <aside id="dialogue" hidden aria-live="polite"><div id="dialogue-avatar" aria-hidden="true">❝</div><div><div class="dialogue-heading"><strong id="dialogue-speaker">Spider-Man</strong><span>IN JE BUURT</span></div><p id="dialogue-line"></p></div></aside>
   <div id="cinema" hidden aria-live="polite"><i class="cine-bar top"></i><i class="cine-bar bottom"></i><p id="cinema-text"></p><small id="cinema-skip">Enter of klik om over te slaan</small></div>
+  <section id="choice-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true"><div class="modal-card result-card"><p class="eyebrow">VERHAAL</p><h2 id="choice-title"></h2><p id="choice-text"></p><div id="choice-buttons"></div></div></section>
   <div id="toast" hidden role="status"></div>
   <div id="round-banner" hidden role="status" aria-live="polite"></div>
 
@@ -165,5 +166,5 @@
   <div id="loading" role="status"><div class="loading-brand"><span class="marvel-wordmark">MARVELS</span><span>FIGHT</span></div><div class="loading-track"><i></i></div><p id="loading-text">De wereld wordt opgebouwd…</p></div>
   <div id="fatal" hidden role="alert"></div>
   <noscript><div class="noscript">Schakel JavaScript in om deze 3D-game te spelen.</div></noscript>
-  <script type="module" src="game.js?v=20261122105633"></script>
+  <script type="module" src="game.js?v=20261122110055"></script>
 </html>

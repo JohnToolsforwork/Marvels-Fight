@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122105633';
-import {startUpdater} from './update.js?v=20261122105633';
-import {createCivilians} from './civilians.js?v=20261122105633';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122105633';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122105633';
-import {createWorld} from './world.js?v=20261122105633';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122105633';
-import {createDuel} from './pvp.js?v=20261122105633';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122105633';
-import {updateNPCFlight} from './npc-flight.js?v=20261122105633';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122105633';
+import {music} from './music.js?v=20261122110055';
+import {startUpdater} from './update.js?v=20261122110055';
+import {createCivilians} from './civilians.js?v=20261122110055';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122110055';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122110055';
+import {createWorld} from './world.js?v=20261122110055';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122110055';
+import {createDuel} from './pvp.js?v=20261122110055';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122110055';
+import {updateNPCFlight} from './npc-flight.js?v=20261122110055';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122110055';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -235,7 +235,7 @@ function startGame(){
  players.forEach((a,i)=>{a.player=i;a.marker.visible=true;a.marker.material.opacity=.9;a.marker.scale.setScalar(1.15);cameraStates[i].yaw=a.def.team==='heroes'?0:Math.PI;});
  $('menu').hidden=true;$('hud').hidden=false;$('result-modal').hidden=true;$('p2-hud').hidden=mode!=='pvp';$('split-divider').hidden=mode!=='pvp';$('dialogue').hidden=true;
  $('player-name').textContent=players[0].def.name;$('player-power').textContent=players[0].def.power;$('p2-name').textContent=players[1]?.def.name||'';
- $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?(storyPart===2?'VERHAAL · DEEL 2 · HET ZWARTE PAK':'VERHAAL · DEEL 1 · HOOFDSTUK '+((storyIndex%CHAPTERS.length)+1)):mode==='deathbattle'?'DEATH BATTLE · LAATSTE TEAM OVER':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
+ $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?'VERHAAL · DEEL '+storyPart+' · HOOFDSTUK '+((storyIndex%partChapters().length)+1):mode==='deathbattle'?'DEATH BATTLE · LAATSTE TEAM OVER':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
  if($('scene-caption'))$('scene-caption').hidden=true;document.body.classList.add('in-game');document.body.classList.toggle('split-screen',mode==='pvp');resize();
  players.forEach((a,i)=>updateCamera(i,1,true));
  if(mode==='pvp'&&pvpFormat==='duel'){
@@ -271,7 +271,53 @@ const PART2=[
   intro:['Avengers Tower. Het is stil in de trainingshal.','Spider-Man heeft je gevraagd om te komen.','Hij gedraagt zich vreemd sinds hij een zwart pak vond…'],
   outro:['Het zwarte pak laat los en verdwijnt.','Spider-Man is gered. Dankzij jou.']},
 ];
-function curChapter(){return storyPart===2?PART2[0]:CHAPTERS[storyIndex%CHAPTERS.length];}
+
+// ---------- Deel 3, 4 en 5 ----------
+const PART3=[
+ {world:'newyork',title:'Het centrum valt',crooks:['ultron','abomination','redskull'],allies:[],need:2,hp:.9,
+  intro:['Thanos heeft een leger gestuurd. De stad valt wijk voor wijk.','Het centrum van New York is als eerste aan de beurt.','Houd ze tegen en red de burgers!'],
+  start:'Dit is erger dan ik dacht. Maar we geven niet op!',taunt:'Thanos heeft de stad al gewonnen, held!',allClear:'Het centrum is vrij. Red de burgers!',
+  outro:['Het centrum is bevrijd.','Maar de haven staat nog in brand…']},
+ {world:'wakanda',title:'De haven in vlammen',crooks:['killmonger','electro','mysterio'],allies:[],need:2,hp:1,
+  intro:['Wakanda. De haven is bezet door trawanten van Thanos.','Ze nemen burgers gevangen als gijzelaars.','Bevrijd de haven.'],
+  start:'Wakanda staat achter me. Laten we ze verslaan.',taunt:'Niemand redt deze haven!',allClear:'De haven is vrij. Nog even de burgers helpen!',
+  outro:['De haven is gered.','Nu naar de tempelwijk.']},
+ {world:'kamartaj',title:'De tempelwijk',crooks:['loki','magneto','octopus'],allies:['strange'],need:3,hp:1,
+  intro:['Kamar-Taj. Magische krachten zijn tegen de monniken gekeerd.','Doctor Strange vecht aan jouw kant.','Bescherm de tempel!'],
+  start:'Samen met Strange doen we dit!',taunt:'Jullie magie is niets tegen onze macht!',allClear:'De tempel is veilig. Help de burgers!',
+  outro:['De tempel is bevrijd.','Het gouden paleis is het volgende doel.']},
+ {world:'asgard',title:'Het gouden paleis',crooks:['hela','sabretooth','goblin','venom'],allies:['thor'],need:2,hp:1.05,
+  intro:['Asgard. Het paleis wordt aangevallen door een grote bende.','Thor staat naast je.','Verdedig het gouden rijk!'],
+  start:'Voor Asgard! Niemand komt hier doorheen!',taunt:'Het paleis is van ons!',allClear:'Het paleis is veilig. Red de laatste burgers!',
+  outro:['Het paleis is gered.','Nu rest alleen nog Thanos zelf.']},
+ {world:'titan',title:'De troon van Thanos',crooks:['thanos','ultron','abomination'],allies:['ironman','captain'],need:0,hp:1,
+  intro:['Titan. De troon van Thanos.','Zijn leger is verslagen. Nu staat hij zelf voor je.','Dit is de laatste strijd.'],
+  start:'Dit is het! Alles voor de stad!',taunt:'Jullie kunnen mijn macht niet stoppen!',allClear:'Thanos is gevallen!',
+  outro:['Thanos ligt verslagen.','De stad is bevrijd. Jij bent de held van de wijken.']},
+];
+const PART4=[
+ {world:'asgard',title:'Het brandende Asgard',crooks:['hela','abomination','goblin'],allies:['strange'],need:2,hp:.95,
+  intro:['Doctor Strange opent per ongeluk een portaal.','Je belandt in een Asgard dat in brand staat.','Vind het eerste deel van de multiversum-sleutel!'],
+  start:'Waar ben ik beland? Strange, wat heb je gedaan?!',taunt:'Wie durft het sleutelstuk te zoeken?',allClear:'De bewakers zijn verslagen. Red de burgers!',
+  outro:['Het eerste sleutelstuk is van jou.','Het portaal trekt je mee naar de volgende wereld.']},
+ {world:'wakanda',title:'Wakanda uit de toekomst',crooks:['ultron','electro','mysterio','killmonger'],allies:['strange'],need:2,hp:1,
+  intro:['Een futuristisch Wakanda vol machines.','Hier ligt het tweede deel van de sleutel.','De bewakers zijn robots en schaduwen.'],
+  start:'Dit Wakanda is van de toekomst. Op naar het sleutelstuk!',taunt:'Het sleutelstuk blijft hier!',allClear:'Alle bewakers zijn uitgeschakeld!',
+  outro:['Twee delen van de sleutel zijn gevonden.','Nog één wereld te gaan.']},
+ {world:'newyork',title:'Het omgekeerde New York',crooks:['redskull','octopus','magneto'],allies:['strange'],need:2,hp:1.05,
+  intro:['Alles staat op zijn kop in dit New York.','Het laatste deel van de sleutel is hier verstopt.','Er is iemand die zich als jou voordoet…'],
+  start:'Bijna klaar. Eén sleutelstuk nog!',taunt:'Je komt nooit hier weg!',allClear:'De bewakers zijn weg. Red de burgers!',
+  outro:['Alle drie de sleutelstukken zijn verzameld.','Maar er wacht een spiegelbeeld op je…']},
+ {world:'kamartaj',title:'Jouw spiegelbeeld',crooks:['doom','loki'],allies:['strange'],need:0,hp:1.3,
+  intro:['De sleutel is compleet, maar het portaal sluit niet.','Een boze spiegelversie van het multiversum wil jou vervangen.','Versla hem om thuis te komen.'],
+  start:'Dit is het einde van de reis. Ik ga naar huis!',taunt:'Ik ben jou, maar sterker!',allClear:'Het spiegelbeeld is verslagen!',
+  outro:['Het portaal sluit zich.','Je bent thuis. Het multiversum is gered.']},
+];
+const PART5=[{world:'avengers',title:'Wie is de verrader?',type:'traitor',
+  intro:['Avengers Tower. Iemand heeft de beveiliging uitgeschakeld.','Een van je eigen teamgenoten is de verrader.','Praat met iedereen en beslis wie je niet vertrouwt.']}];
+const PART_END={1:'Je hebt alle misdaden gestopt. Op naar deel 2!',2:'Spider-Man is gered van Venom. Op naar deel 3!',3:'Thanos is verslagen en de stad is bevrijd. Op naar deel 4!',4:'Het multiversum is gered. Op naar deel 5!',5:'De verrader is ontmaskerd. Het hele verhaal is uit!'};
+function partChapters(){return storyPart===1?CHAPTERS:storyPart===2?PART2:storyPart===3?PART3:storyPart===4?PART4:PART5;}
+function curChapter(){const l=partChapters();return l[storyIndex%l.length];}
 function prepareStory(){
  const d=ROSTER.find(r=>r.id===selected);if(d&&d.team!=='heroes')chooseCharacter('captain');
  if(storyPart===2&&selected==='spiderman'){chooseCharacter('captain');toast('Spider-Man kun je in deel 2 niet zijn. Je speelt nu Captain America.',4);}
@@ -308,6 +354,7 @@ function sayAs(actor,line,secs=4.5){
 function startStory(){
  const ch=curChapter(),me=players[0];
  if(ch.type==='venom'){startVenomStory(ch);return;}
+ if(ch.type==='traitor'){startTraitorStory(ch);return;}
  story={ch,total:ch.crooks.length,down:0,resc:0,need:ch.need};
  const crooks=[],allies=[];
  for(const a of actors){
@@ -325,7 +372,7 @@ function startStory(){
  playCinema(ch.intro,()=>{
   sayAs(me,ch.start,4);
   setTimeout(()=>{if(state==='playing'&&mode==='story'&&story&&crooks[0])sayAs(crooks[0],ch.taunt,4);},4200);
-  toast('Hoofdstuk '+((storyIndex%CHAPTERS.length)+1)+' · '+ch.title,4);
+  toast('Deel '+storyPart+' · hoofdstuk '+((storyIndex%partChapters().length)+1)+' · '+ch.title,4);
  });
 }
 
@@ -353,6 +400,7 @@ function startVenomStory(ch){
  });
 }
 function updateStory(){
+ if(story&&story.type==='traitor'&&state==='playing'&&!cutsceneActive()){updateTraitor();return;}
  if(!story||story.type!=='venom'||state!=='playing'||cutsceneActive())return;
  if(story.phase==='talk'){
   const me=players[0],sp=story.sp;
@@ -400,12 +448,77 @@ function venomWin(){
  sayAs(sp,'Bedankt… je hebt me gered. Dat pak is weg.',4.5);
  setTimeout(()=>{
   if(state!=='playing')return;
-  playCinema(ch.outro,()=>{storyPart=1;showResult('Deel 2 voltooid!','Spider-Man is gered van Venom. Het verhaal is uit.','Opnieuw spelen (deel 2)');storyPart=2;});
+  playCinema(ch.outro,()=>{storyIndex=0;showResult('Deel 2 voltooid!',PART_END[2],'Opnieuw (deel 2)');});
  },5200);
+}
+
+// ---------- Deel 5: wie is de verrader? ----------
+const TRAITOR_POOL=['vision','antman','hawkeye','thor','strange','widow'];
+const ALIBI={vision:'Ik heb de hele nacht de systemen van de toren gecontroleerd.',antman:'Ik was klein genoeg om overal te kijken. Niets te zien.',hawkeye:'Ik stond de hele nacht op het dak op wacht.',thor:'Ik kwam net terug van Asgard. Ik weet van niets.',strange:'Ik was aan het mediteren in het Sanctum.',widow:'Ik heb de bewakingsbeelden bekeken. Niets vreemds.'};
+const SLIP=['Ik heb niets gedaan! Dat plan van de beveiliging… bedoel ik, dat jullie het ontdekt hebben.','De beveiliging was uit? Dat klopt, dat had ik… dat hoorde ik net pas.','Niemand mag weten waar ik gisteren was. Vraag er niet naar!'];
+function startTraitorStory(ch){
+ const me=players[0];
+ const pool=actors.filter(a=>TRAITOR_POOL.includes(a.def.id)&&a.def.id!==me.def.id);
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ const cands=pool.slice(0,3),traitor=cands[Math.floor(Math.random()*3)];
+ story={ch,type:'traitor',phase:'talk',cands,traitor,talked:new Set(),total:1,down:0,resc:0,need:0,sayUntil:0};
+ for(const a of actors){if(a===me||cands.includes(a))continue;a.active=false;a.dead=true;a.group.visible=false;a.respawn=0;}
+ const place=(a,x,z,fx,fz)=>{const p=freeNear(x,z,a.radius);a.group.position.set(p.x,0,p.z);a.spawn.set(p.x,0,p.z);a.group.rotation.y=Math.atan2(fx-p.x,fz-p.z);};
+ place(me,0,30,0,-6);cameraStates[0].yaw=0;
+ cands.forEach((a,i)=>{place(a,(i-1)*10,-6,0,30);a.active=true;a.dead=false;a.group.visible=true;a.stun=9999;a.invulnerable=9999;a.hp=a.maxHp;});
+ civ.clear();updateCamera(0,1,true);
+ playCinema(ch.intro,()=>{toast('Deel 5 · '+ch.title,4);sayAs(me,'Iedereen kan het zijn. Ik praat met ze allemaal.',4);storyProgress(true);});
+}
+function updateTraitor(){
+ if(story.phase!=='talk'||elapsed<story.sayUntil)return;
+ const me=players[0];if(!me||me.dead)return;
+ for(const c of story.cands){
+  if(story.talked.has(c))continue;
+  if(Math.hypot(me.group.position.x-c.group.position.x,me.group.position.z-c.group.position.z)<5){
+   story.talked.add(c);
+   const line=c===story.traitor?SLIP[Math.floor(Math.random()*SLIP.length)]:ALIBI[c.def.id];
+   face(c,me.group.position.x-c.group.position.x,me.group.position.z-c.group.position.z,1);
+   sayAs(c,line,5.5);story.sayUntil=elapsed+6;storyProgress(true);
+   if(story.talked.size===3){const mine=story;setTimeout(()=>{if(story===mine&&state==='playing')openChoice();},6200);}
+   return;
+  }
+ }
+}
+function openChoice(){
+ story.phase='choose';cutUntil=elapsed+1e9;keys.clear();
+ $('choice-title').textContent='Wie is de verrader?';$('choice-text').textContent='Je hebt met iedereen gepraat. Wie vertrouw je niet?';
+ const box=$('choice-buttons');box.replaceChildren();
+ for(const c of story.cands){const b=document.createElement('button');b.type='button';b.className='secondary-button';b.textContent=c.def.name;b.addEventListener('click',()=>{$('choice-modal').hidden=true;cutUntil=0;story.correct=c===story.traitor;revealTraitor();});box.append(b);}
+ $('choice-modal').hidden=false;
+}
+function revealTraitor(){
+ const t=story.traitor,me=players[0],mine=story;
+ t.def=Object.assign({},t.def,{team:'villains'});t.labels?.forEach(l=>{l.className='actor-label villains';});
+ t.maxHp=Math.round(t.maxHp*(story.correct?1.35:1.8));t.hp=t.maxHp;t.stun=0;t.invulnerable=2;
+ for(const c of story.cands)if(c!==t){c.stun=0;c.invulnerable=0;}
+ burst(eye(t),'#ff3355',5,'sphere',1.1);
+ story.crooks=[t];story.phase='fight';
+ playCinema(story.correct?['Je had het goed gezien!',t.def.name+' toont zijn ware gezicht.']:['Je koos de verkeerde…',t.def.name+' verraadt jullie allemaal!'],()=>{
+  if(story!==mine)return;
+  sayAs(t,'Jullie hadden me nooit moeten vertrouwen!',4.5);storyProgress(true);
+ });
+}
+function traitorWin(){
+ if(!story||story.won)return;story.won=true;
+ const me=players[0],t=story.traitor;if(me)me.invulnerable=60;
+ const lines=story.correct?['De verrader is ontmaskerd.','Jij had het goed gezien. Het team vertrouwt je.','Het hele verhaal is uit. Goed gedaan, held!']:['De verrader is verslagen.','Je vertrouwde eerst de verkeerde, maar je hebt toch gewonnen.','Het hele verhaal is uit. Goed gedaan, held!'];
+ sayAs(me,story.correct?'Ik wist het meteen!':'Dat was een lastige. Maar het is gelukt.',3.5);
+ const mine=story;setTimeout(()=>{if(story!==mine||state!=='playing')return;playCinema(lines,()=>{storyIndex=0;showResult('Deel 5 voltooid!',PART_END[5]+(story.correct?' Je koos de juiste verrader.':' Je koos eerst fout.'),'Opnieuw (deel 5)');});},3800);
 }
 function storyProgress(initial=false){
 
  if(!story)return;
+ if(story.type==='traitor'){
+  const o=$('objective');o.hidden=false;
+  o.textContent=story.phase==='fight'?'Versla de verrader':story.phase==='choose'?'Maak je keuze':'Praat met je teamgenoten ('+story.talked.size+'/3)';
+  if(!initial&&story.down>=1)traitorWin();
+  return;
+ }
  if(story.type==='venom'){
   const o=$('objective');o.hidden=false;
   o.textContent=story.phase==='fight'?'Versla Venom om Spider-Man te redden':'Loop naar Spider-Man en praat met hem';
@@ -426,18 +539,18 @@ function showResult(title,detail,btn){
 }
 function storyWin(){
  if(!story||story.won)return;story.won=true;
- const ch=story.ch,last=(storyIndex%CHAPTERS.length)===CHAPTERS.length-1,me=players[0];
+ const ch=story.ch,list=partChapters(),last=(storyIndex%list.length)===list.length-1,me=players[0];
  if(me)me.invulnerable=60;
  playCinema(ch.outro,()=>{
-  const n=storyIndex%CHAPTERS.length+1;
-  if(last){storyIndex=0;showResult('Verhaal voltooid!','Je hebt alle misdaden gestopt. De stad is veilig dankzij jou.','Opnieuw vanaf hoofdstuk 1');}
-  else{storyIndex++;showResult('Hoofdstuk '+n+' voltooid!',ch.title+' · volgende: '+CHAPTERS[storyIndex%CHAPTERS.length].title,'Volgende hoofdstuk');}
+  const n=storyIndex%list.length+1;
+  if(last){storyIndex=0;showResult('Deel '+storyPart+' voltooid!',PART_END[storyPart],'Opnieuw (deel '+storyPart+')');}
+  else{storyIndex++;showResult('Hoofdstuk '+n+' voltooid!',ch.title+' · volgende: '+list[storyIndex%list.length].title,'Volgende hoofdstuk');}
  });
 }
 function storyFail(){
  if(!story||story.won||state!=='playing')return;
- const n=storyIndex%CHAPTERS.length+1;
- showResult('Mislukt.',story.type==='venom'?'Venom was te sterk. Probeer het opnieuw.':'Je werd verslagen in hoofdstuk '+n+'. Probeer het opnieuw.','Opnieuw proberen');
+ const n=storyIndex%partChapters().length+1;
+ showResult('Mislukt.',story.type==='venom'?'Venom was te sterk. Probeer het opnieuw.':story.type==='traitor'?'De verrader was te sterk. Probeer het opnieuw.':'Je werd verslagen in hoofdstuk '+n+'. Probeer het opnieuw.','Opnieuw proberen');
 }
 window.addEventListener('keydown',e=>{if(cutsceneActive()&&(e.code==='Enter'||e.code==='Space'||e.code==='Escape')){skipCinema();e.preventDefault();}},true);
 document.getElementById('cinema')?.addEventListener('click',skipCinema);
@@ -493,7 +606,7 @@ function updateLocks(){
 }
 document.addEventListener('click',e=>{
  const b=e.target instanceof Element?e.target.closest('[data-part]'):null;if(!b)return;
- storyPart=+b.dataset.part;
+ storyPart=+b.dataset.part;storyIndex=0;
  if(storyPart===2&&selected==='spiderman'){chooseCharacter('captain');}
  updateLocks();
 });
