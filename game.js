@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261121234237';
-import {startUpdater} from './update.js?v=20261121234237';
-import {createCivilians} from './civilians.js?v=20261121234237';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261121234237';
-import {SoftwareRenderer} from './software-renderer.js?v=20261121234237';
-import {createWorld} from './world.js?v=20261121234237';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261121234237';
-import {createDuel} from './pvp.js?v=20261121234237';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261121234237';
-import {updateNPCFlight} from './npc-flight.js?v=20261121234237';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261121234237';
+import {music} from './music.js?v=20261122102530';
+import {startUpdater} from './update.js?v=20261122102530';
+import {createCivilians} from './civilians.js?v=20261122102530';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122102530';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122102530';
+import {createWorld} from './world.js?v=20261122102530';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122102530';
+import {createDuel} from './pvp.js?v=20261122102530';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122102530';
+import {updateNPCFlight} from './npc-flight.js?v=20261122102530';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122102530';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -790,9 +790,9 @@ function updateAI(a,dt){
  if(a.talking){a.talking=false;if(currentTalker===a){window.speechSynthesis?.cancel();currentTalker=null;dialogueUntil=elapsed;}}
  updateNPCFlight(a,dt,{canFly:FLIERS.has(a.def.id),enabled:true,distance,targetY:b.group.position.y,...npcFlightSpace(a,b)});
  const melee=['melee','hammer','tentacle'].includes(spec.kind),range=meleeRange(a),desired=melee?range*.72:range*.65;
- if(distance>desired||!canSee)followPath(a,b.group.position,a.def.speed*(mode==='explore'?.78:.88)*(a.slow>0?.5:1)*movementModifier(a)*(1+Math.min(1.7,Math.max(0,(distance-70)/110))),dt);
+ if(distance>desired||!canSee)followPath(a,b.group.position,a.def.speed*(mode==='explore'?.85:1.04)*(distance>desired+5?1.38:1)*(a.slow>0?.5:1)*movementModifier(a)*(1+Math.min(1.7,Math.max(0,(distance-70)/110))),dt);
  else {a.moveVelocity.multiplyScalar(Math.exp(-dt*16));face(a,b.group.position.x-a.group.position.x,b.group.position.z-a.group.position.z,Math.min(1,dt*12));}
- if(a.def.id==='deadpool'&&distance>spec.range&&distance<=PISTOL.range&&canSee)firePistol(a);else if(distance<=range+.15&&canSee)attack(a);
+ if(a.def.id==='deadpool'&&distance>spec.range&&distance<=PISTOL.range&&canSee)firePistol(a);else if(distance<=range+1&&canSee)attack(a);
  if(a.specialCooldown<=0&&a.specialThink<=0&&canSee){
   const useful=spec.special==='healing'?a.hp<a.maxHp*.75:spec.special==='regenerate'?a.hp<a.maxHp*.8||distance<5:distance<=Math.max(spec.range,8);
   if(useful)special(a);
