@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122134013';
-import {startUpdater} from './update.js?v=20261122134013';
-import {createCivilians} from './civilians.js?v=20261122134013';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122134013';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122134013';
-import {createWorld} from './world.js?v=20261122134013';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122134013';
-import {createDuel} from './pvp.js?v=20261122134013';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122134013';
-import {updateNPCFlight} from './npc-flight.js?v=20261122134013';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122134013';
+import {music} from './music.js?v=20261122135518';
+import {startUpdater} from './update.js?v=20261122135518';
+import {createCivilians} from './civilians.js?v=20261122135518';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122135518';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122135518';
+import {createWorld} from './world.js?v=20261122135518';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122135518';
+import {createDuel} from './pvp.js?v=20261122135518';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122135518';
+import {updateNPCFlight} from './npc-flight.js?v=20261122135518';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122135518';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -770,6 +770,12 @@ function damage(target,amount,attacker,slow=0){
  if(attacker.player>=0)attacker.aggro=18;
  target.hp=Math.max(0,target.hp-amount);target.hurt=.22;target.aggro=12;target.lastAttacker=attacker;target.slow=Math.max(target.slow,slow);particles(eye(target),effectColors[attacker.def.id],5);
  if(target.player>=0)sound('hit',.06);
+ // Terugslag: wie door of tegen een speler wordt geraakt, vliegt een stukje weg (met een korte stoot omhoog).
+ if(target.hp>0&&attacker!==target&&(target.player>=0||attacker.player>=0)){
+   const dx=target.group.position.x-attacker.group.position.x,dz=target.group.position.z-attacker.group.position.z,len=Math.hypot(dx,dz)||1,heavy=(target.def.id==='hulk'||target.def.id==='abomination'||target.def.id==='thanos')?.55:1,force=clamp(8+amount*.18,9,17)*heavy;
+   target.kbx=dx/len*force;target.kbz=dz/len*force;target.stun=Math.max(target.stun,.3);
+   if(!target.flying&&target.group.position.y<=groundHeight(target,target.group.position.y)+.06)target.vy=Math.max(target.vy,6.5*heavy);
+ }
  if(target.hp<=0){
    target.dead=true;target.healing=0;target.pendingAttack=null;target.pendingPistol=null;target.respawn=5;target.group.visible=false;burst(eye(target),target.def.team==='heroes'?'#5fbfff':'#ff6a86',2.5,'sphere',.7);
    attacker.kills=(attacker.kills||0)+1;if(attacker.player>=0&&target.player<0)koTotal++;
@@ -1044,6 +1050,7 @@ function updateActors(dt){
    }
    if(canAct()&&a.healing>0){const time=Math.min(dt,a.healing);a.hp=Math.min(a.maxHp,a.hp+time*12);a.healing=Math.max(0,a.healing-time);}
    if(a.stun>0)a.flightAxis=0;
+   if(a.kbx||a.kbz){slideMove(a.group.position,a.kbx*dt,a.kbz*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));const f=Math.exp(-dt*3.4);a.kbx*=f;a.kbz*=f;if(Math.hypot(a.kbx,a.kbz)<.4)a.kbx=a.kbz=0;}
    if(canAct()&&a.stun<=0){if(a.player>=0)controlActor(a,a.player,dt);else updateAI(a,dt);}
    if(state==='playing'){
      verticalMotion(a,dt);
