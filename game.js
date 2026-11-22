@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122110055';
-import {startUpdater} from './update.js?v=20261122110055';
-import {createCivilians} from './civilians.js?v=20261122110055';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122110055';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122110055';
-import {createWorld} from './world.js?v=20261122110055';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122110055';
-import {createDuel} from './pvp.js?v=20261122110055';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122110055';
-import {updateNPCFlight} from './npc-flight.js?v=20261122110055';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122110055';
+import {music} from './music.js?v=20261122110744';
+import {startUpdater} from './update.js?v=20261122110744';
+import {createCivilians} from './civilians.js?v=20261122110744';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122110744';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122110744';
+import {createWorld} from './world.js?v=20261122110744';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122110744';
+import {createDuel} from './pvp.js?v=20261122110744';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122110744';
+import {updateNPCFlight} from './npc-flight.js?v=20261122110744';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122110744';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -245,7 +245,7 @@ function startGame(){
  }else if(mode==='survival')startSurvival();
  else if(mode==='story')startStory();
  else toast(mode==='explore'?'De teams zoeken elkaar op. Verken de wereld of doe mee aan het gevecht.':mode==='endless'?'Eindeloos: de punten lopen door en er is geen winnaar. Ga naar het menu om te stoppen.':mode==='battle100'?'Eerste team met 100 punten wint. Shift om te ontwijken.':'Eerste team met 15 punten wint. Shift om te ontwijken.',5);
- if(duel)civ.clear();else if(!(mode==='story'&&story?.type==='venom'))civ.spawn(world.bounds.maxX>100?16:6,players.map(p=>({x:p.group.position.x,z:p.group.position.z})));
+ if(duel)civ.clear();else if(!(mode==='story'&&story?.type==='venom'))civ.spawn(0,players.map(p=>({x:p.group.position.x,z:p.group.position.z})));
  if(mode==='story'&&story){civ.forceHelp(story.need);storyProgress(true);}
  updateHud();
 }
@@ -253,16 +253,16 @@ function startGame(){
 // ================= VERHAAL =================
 const CHAPTERS=[
  {world:'newyork',title:'Overval in de stad',crooks:['electro','sabretooth','octopus'],allies:[],need:2,hp:.85,
-  intro:['New York. Het is nacht in het centrum.','Een bende maakt de straten onveilig.','Burgers zitten klem. Jij bent de enige die kan helpen.'],
-  start:'Ik hoor alarmen. Tijd om de stad te beschermen!',taunt:'Dit is onze stad nu, held!',allClear:'De boeven liggen er uit. Nu de burgers in nood redden!',
+  intro:['New York. Het is nacht in het centrum.','Een bende maakt de straten onveilig.','Jij bent de enige die ze kan tegenhouden.'],
+  start:'Ik hoor alarmen. Tijd om de stad te beschermen!',taunt:'Dit is onze stad nu, held!',allClear:'De boeven liggen er uit!',
   outro:['De straten zijn weer veilig.','Maar dit was pas het begin…']},
  {world:'wakanda',title:'De bende slaat terug',crooks:['goblin','venom','mysterio','redskull'],allies:[],need:3,hp:1,
-  intro:['Wakanda. Een nieuwe bende heeft de stad bezet.','Ze nemen burgers gevangen en eisen losgeld.','Laat zien dat niemand boven de wet staat.'],
-  start:'Vier tegelijk. Dat is nog eens een uitdaging!',taunt:'Je komt te laat, held. Wij hebben de stad al!',allClear:'Alle boeven zijn verslagen. Red de laatste burgers!',
+  intro:['Wakanda. Een nieuwe bende heeft de stad bezet.','Ze eisen losgeld van de stad.','Laat zien dat niemand boven de wet staat.'],
+  start:'Vier tegelijk. Dat is nog eens een uitdaging!',taunt:'Je komt te laat, held. Wij hebben de stad al!',allClear:'Alle boeven zijn verslagen!',
   outro:['De bende is opgerold.','Maar iemand trok de touwtjes…']},
  {world:'asgard',title:'De grote baas',crooks:['thanos','loki','hela'],allies:['ironman','thor'],need:2,hp:1,
-  intro:['Asgard. Het gouden rijk trilt op zijn grondvesten.','Thanos wil de macht en zijn trawanten houden burgers gevangen.','Je bent niet alleen. Iron Man en Thor vechten aan jouw kant.'],
-  start:'Dit is het! Samen stoppen we Thanos!',taunt:'Jullie zijn te laat. De macht is van mij!',allClear:'Thanos is verslagen! Red nu de laatste burgers!',
+  intro:['Asgard. Het gouden rijk trilt op zijn grondvesten.','Thanos wil de macht en zijn trawanten houden de stad bezet.','Je bent niet alleen. Iron Man en Thor vechten aan jouw kant.'],
+  start:'Dit is het! Samen stoppen we Thanos!',taunt:'Jullie zijn te laat. De macht is van mij!',allClear:'Thanos is verslagen!',
   outro:['Thanos ligt geslagen op de grond.','De stad is gered. Jij bent een echte held!']},
 ];
 
@@ -275,20 +275,20 @@ const PART2=[
 // ---------- Deel 3, 4 en 5 ----------
 const PART3=[
  {world:'newyork',title:'Het centrum valt',crooks:['ultron','abomination','redskull'],allies:[],need:2,hp:.9,
-  intro:['Thanos heeft een leger gestuurd. De stad valt wijk voor wijk.','Het centrum van New York is als eerste aan de beurt.','Houd ze tegen en red de burgers!'],
-  start:'Dit is erger dan ik dacht. Maar we geven niet op!',taunt:'Thanos heeft de stad al gewonnen, held!',allClear:'Het centrum is vrij. Red de burgers!',
+  intro:['Thanos heeft een leger gestuurd. De stad valt wijk voor wijk.','Het centrum van New York is als eerste aan de beurt.','Houd ze tegen!'],
+  start:'Dit is erger dan ik dacht. Maar we geven niet op!',taunt:'Thanos heeft de stad al gewonnen, held!',allClear:'Het centrum is vrij!',
   outro:['Het centrum is bevrijd.','Maar de haven staat nog in brand…']},
  {world:'wakanda',title:'De haven in vlammen',crooks:['killmonger','electro','mysterio'],allies:[],need:2,hp:1,
-  intro:['Wakanda. De haven is bezet door trawanten van Thanos.','Ze nemen burgers gevangen als gijzelaars.','Bevrijd de haven.'],
-  start:'Wakanda staat achter me. Laten we ze verslaan.',taunt:'Niemand redt deze haven!',allClear:'De haven is vrij. Nog even de burgers helpen!',
+  intro:['Wakanda. De haven is bezet door trawanten van Thanos.','Ze houden de haven bezet.','Bevrijd de haven.'],
+  start:'Wakanda staat achter me. Laten we ze verslaan.',taunt:'Niemand redt deze haven!',allClear:'De haven is vrij!',
   outro:['De haven is gered.','Nu naar de tempelwijk.']},
  {world:'kamartaj',title:'De tempelwijk',crooks:['loki','magneto','octopus'],allies:['strange'],need:3,hp:1,
   intro:['Kamar-Taj. Magische krachten zijn tegen de monniken gekeerd.','Doctor Strange vecht aan jouw kant.','Bescherm de tempel!'],
-  start:'Samen met Strange doen we dit!',taunt:'Jullie magie is niets tegen onze macht!',allClear:'De tempel is veilig. Help de burgers!',
+  start:'Samen met Strange doen we dit!',taunt:'Jullie magie is niets tegen onze macht!',allClear:'De tempel is veilig!',
   outro:['De tempel is bevrijd.','Het gouden paleis is het volgende doel.']},
  {world:'asgard',title:'Het gouden paleis',crooks:['hela','sabretooth','goblin','venom'],allies:['thor'],need:2,hp:1.05,
   intro:['Asgard. Het paleis wordt aangevallen door een grote bende.','Thor staat naast je.','Verdedig het gouden rijk!'],
-  start:'Voor Asgard! Niemand komt hier doorheen!',taunt:'Het paleis is van ons!',allClear:'Het paleis is veilig. Red de laatste burgers!',
+  start:'Voor Asgard! Niemand komt hier doorheen!',taunt:'Het paleis is van ons!',allClear:'Het paleis is veilig!',
   outro:['Het paleis is gered.','Nu rest alleen nog Thanos zelf.']},
  {world:'titan',title:'De troon van Thanos',crooks:['thanos','ultron','abomination'],allies:['ironman','captain'],need:0,hp:1,
   intro:['Titan. De troon van Thanos.','Zijn leger is verslagen. Nu staat hij zelf voor je.','Dit is de laatste strijd.'],
@@ -298,7 +298,7 @@ const PART3=[
 const PART4=[
  {world:'asgard',title:'Het brandende Asgard',crooks:['hela','abomination','goblin'],allies:['strange'],need:2,hp:.95,
   intro:['Doctor Strange opent per ongeluk een portaal.','Je belandt in een Asgard dat in brand staat.','Vind het eerste deel van de multiversum-sleutel!'],
-  start:'Waar ben ik beland? Strange, wat heb je gedaan?!',taunt:'Wie durft het sleutelstuk te zoeken?',allClear:'De bewakers zijn verslagen. Red de burgers!',
+  start:'Waar ben ik beland? Strange, wat heb je gedaan?!',taunt:'Wie durft het sleutelstuk te zoeken?',allClear:'De bewakers zijn verslagen!',
   outro:['Het eerste sleutelstuk is van jou.','Het portaal trekt je mee naar de volgende wereld.']},
  {world:'wakanda',title:'Wakanda uit de toekomst',crooks:['ultron','electro','mysterio','killmonger'],allies:['strange'],need:2,hp:1,
   intro:['Een futuristisch Wakanda vol machines.','Hier ligt het tweede deel van de sleutel.','De bewakers zijn robots en schaduwen.'],
@@ -306,7 +306,7 @@ const PART4=[
   outro:['Twee delen van de sleutel zijn gevonden.','Nog één wereld te gaan.']},
  {world:'newyork',title:'Het omgekeerde New York',crooks:['redskull','octopus','magneto'],allies:['strange'],need:2,hp:1.05,
   intro:['Alles staat op zijn kop in dit New York.','Het laatste deel van de sleutel is hier verstopt.','Er is iemand die zich als jou voordoet…'],
-  start:'Bijna klaar. Eén sleutelstuk nog!',taunt:'Je komt nooit hier weg!',allClear:'De bewakers zijn weg. Red de burgers!',
+  start:'Bijna klaar. Eén sleutelstuk nog!',taunt:'Je komt nooit hier weg!',allClear:'De bewakers zijn weg!',
   outro:['Alle drie de sleutelstukken zijn verzameld.','Maar er wacht een spiegelbeeld op je…']},
  {world:'kamartaj',title:'Jouw spiegelbeeld',crooks:['doom','loki'],allies:['strange'],need:0,hp:1.3,
   intro:['De sleutel is compleet, maar het portaal sluit niet.','Een boze spiegelversie van het multiversum wil jou vervangen.','Versla hem om thuis te komen.'],
@@ -355,7 +355,7 @@ function startStory(){
  const ch=curChapter(),me=players[0];
  if(ch.type==='venom'){startVenomStory(ch);return;}
  if(ch.type==='traitor'){startTraitorStory(ch);return;}
- story={ch,total:ch.crooks.length,down:0,resc:0,need:ch.need};
+ story={ch,total:ch.crooks.length,down:0,resc:0,need:0};
  const crooks=[],allies=[];
  for(const a of actors){
   if(a===me)continue;
@@ -526,7 +526,7 @@ function storyProgress(initial=false){
   return;
  }
  const o=$('objective');o.hidden=false;
- o.textContent='Boeven: '+story.down+'/'+story.total+'  ·  Burgers gered: '+Math.min(story.resc,story.need)+'/'+story.need;
+ o.textContent='Versla de boeven: '+story.down+'/'+story.total;
  if(initial)return;
  if(story.down>=story.total&&story.resc>=story.need){storyWin();return;}
  if(story.down>=story.total&&!story.saidClear){story.saidClear=true;sayAs(players[0],story.ch.allClear,4.5);}
