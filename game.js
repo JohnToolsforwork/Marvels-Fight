@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122173944';
-import {startUpdater} from './update.js?v=20261122173944';
-import {createCivilians} from './civilians.js?v=20261122173944';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122173944';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122173944';
-import {createWorld} from './world.js?v=20261122173944';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122173944';
-import {createDuel} from './pvp.js?v=20261122173944';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122173944';
-import {updateNPCFlight} from './npc-flight.js?v=20261122173944';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122173944';
+import {music} from './music.js?v=20261122175019';
+import {startUpdater} from './update.js?v=20261122175019';
+import {createCivilians} from './civilians.js?v=20261122175019';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122175019';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122175019';
+import {createWorld} from './world.js?v=20261122175019';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122175019';
+import {createDuel} from './pvp.js?v=20261122175019';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122175019';
+import {updateNPCFlight} from './npc-flight.js?v=20261122175019';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122175019';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -778,8 +778,8 @@ function damage(target,amount,attacker,slow=0){
  const hpBefore=target.hp;target.hp=Math.max(0,target.hp-amount);attacker.dmgDealt=(attacker.dmgDealt||0)+(hpBefore-target.hp);target.hurt=.22;target.aggro=12;target.lastAttacker=attacker;target.slow=Math.max(target.slow,slow);particles(eye(target),effectColors[attacker.def.id],5);
  if(target.player>=0)sound('hit',.06);
  // Terugslag: wie door of tegen een speler wordt geraakt, vliegt een stukje weg (met een korte stoot omhoog).
- if(target.hp>0&&attacker!==target&&(target.player>=0||attacker.player>=0)){
-   const dx=target.group.position.x-attacker.group.position.x,dz=target.group.position.z-attacker.group.position.z,len=Math.hypot(dx,dz)||1,heavy=(target.def.id==='hulk'||target.def.id==='abomination'||target.def.id==='thanos')?.55:1,force=clamp(8+amount*.18,9,17)*heavy;
+ if(target.hp>0&&attacker!==target&&amount>=18&&(target.player>=0||attacker.player>=0)){
+   const dx=target.group.position.x-attacker.group.position.x,dz=target.group.position.z-attacker.group.position.z,len=Math.hypot(dx,dz)||1,heavy=(target.def.id==='hulk'||target.def.id==='abomination'||target.def.id==='thanos')?.55:1,force=clamp(amount*.22,0,14)*heavy;   // kleine kogels duwen nauwelijks, zware klappen wel
    // Eén terugslag per 0,6 s en maar 0,12 s vast: snelle schutters kunnen een speler dus nooit meer vastzetten.
    if(!(target.kbCool>0)){
      target.kbx=dx/len*force;target.kbz=dz/len*force;target.stun=Math.max(target.stun,.12);target.kbCool=.6;
@@ -1061,7 +1061,7 @@ function updateActors(dt){
    if(canAct()&&a.healing>0){const time=Math.min(dt,a.healing);a.hp=Math.min(a.maxHp,a.hp+time*12);a.healing=Math.max(0,a.healing-time);}
    if(a.stun>0)a.flightAxis=0;
    a.kbCool=Math.max(0,(a.kbCool||0)-dt);
-   if(a.kbx||a.kbz){slideMove(a.group.position,a.kbx*dt,a.kbz*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));const f=Math.exp(-dt*3.4);a.kbx*=f;a.kbz*=f;if(Math.hypot(a.kbx,a.kbz)<.4)a.kbx=a.kbz=0;}
+   if(a.kbx||a.kbz){slideMove(a.group.position,a.kbx*dt,a.kbz*dt,a.radius,world.colliders,world.bounds,bodyHeight(a));const f=Math.exp(-dt*6);a.kbx*=f;a.kbz*=f;if(Math.hypot(a.kbx,a.kbz)<.4)a.kbx=a.kbz=0;}
    if(canAct()&&a.stun<=0){if(a.player>=0)controlActor(a,a.player,dt);else updateAI(a,dt);}
    if(state==='playing'){
      verticalMotion(a,dt);
