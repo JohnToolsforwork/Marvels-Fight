@@ -430,7 +430,7 @@ export function createCharacter(idOrDef){
     for(const s of [-1,1]){const ear=mesh(geo.cone,suit,head,s*.35,.04,-.01,.08,.22,.07);ear.rotation.z=-s*1.1;}
     box(head,white,0,-.16,.25,.21,.04,.016);
     const glider=group(body,0,.1,-.24);box(glider,steel,0,0,0,1.55,.06,.36);for(const s of [-1,1]){const wing=box(glider,accent,s*.67,.01,-.14,.65,.06,.32);wing.rotation.y=s*.35;}
-    accessories.glider=glider;oval(hands[1],mat('#f7a548',.1,.5,'#bc6325'),0,-.14,.08,.1,.1,.1);
+    accessories.glider=glider;oval(hands[1],mat('#f7a548',.1,.5,'#bc6325'),0,-.05,.07,.1,.1,.1);
   }else if(id==='octopus'){
     // A coat and four jointed tentacles. Segments rotate gently while idle.
     accessories.cape=cape(body,'#615d43',.8,1.18);eyes.forEach(e=>e.scale.y=.7);
@@ -743,7 +743,7 @@ export function updateCharacter(rig,dt,opts={}){
   if(rig.accessories.cape){rig.accessories.cape.rotation.x=THREE.MathUtils.clamp(.11+(moving?.23:0)+Math.sin(t*2+rig.phase)*.025,.08,.38);rig.accessories.cape.rotation.z=Math.sin(t*1.4)*.025;}
   if(rig.accessories.tentacles)rig.accessories.tentacles.forEach((a,i)=>{a.rotation.y=Math.sin(t*1.7+i)*.08+attack*(i%2?-.2:.2);a.rotation.x=Math.sin(t*1.3+i)*.06;});
   if(rig.accessories.magic)rig.accessories.magic.forEach((m,i)=>{m.rotation.z=t*(i?1:-1);m.scale.copy(m.userData.baseScale).multiplyScalar(1+attack*.75+Math.sin(t*4)*.04);});
-  if(rig.accessories.glider)rig.accessories.glider.rotation.z=Math.sin(t*2)*.025;
+  if(rig.accessories.glider){const gl=rig.accessories.glider,f=motion.flight;gl.rotation.z=Math.sin(t*2)*.025;gl.rotation.x=(1-f)*(Math.PI/2-.15);gl.position.y=.1+(1-f)*1.55;gl.position.z=-.24-(1-f)*.08;gl.scale.setScalar(1-(1-f)*.35);}
   animateSignature(rig,t,attack,flight,moving,dead,rangedAttack);
   const poseEase=1-Math.exp(-step*((attack||rangedAttack)?38:18));
   for(const entry of rig.poseBlend){entry.position.lerp(entry.node.position,poseEase);entry.quaternion.slerp(entry.node.quaternion,poseEase);entry.node.position.copy(entry.position);entry.node.quaternion.copy(entry.quaternion);}
