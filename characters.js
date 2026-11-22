@@ -51,9 +51,22 @@ export const ROSTER = [
 ];
 
 const materialCache = new Map();
+// Zachte schaduwtextuur: donkerder aan de uiteinden van elk lichaamsdeel (gewrichten) en fijne stof-ruis, zodat alles meer volume krijgt.
+let shadeTex=null;
+function shadeTexture(){
+  if(shadeTex)return shadeTex;
+  const c=document.createElement('canvas');c.width=64;c.height=128;const g=c.getContext('2d');
+  const grad=g.createLinearGradient(0,0,0,128);
+  grad.addColorStop(0,'#b4b4b4');grad.addColorStop(.2,'#e6e6e6');grad.addColorStop(.5,'#ffffff');grad.addColorStop(.8,'#e6e6e6');grad.addColorStop(1,'#a8a8a8');
+  g.fillStyle=grad;g.fillRect(0,0,64,128);
+  const img=g.getImageData(0,0,64,128);for(let i=0;i<img.data.length;i+=4){const n=(Math.random()-.5)*14;img.data[i]=Math.max(0,Math.min(255,img.data[i]+n));img.data[i+1]=Math.max(0,Math.min(255,img.data[i+1]+n));img.data[i+2]=Math.max(0,Math.min(255,img.data[i+2]+n));}
+  g.putImageData(img,0,0);
+  shadeTex=new THREE.CanvasTexture(c);shadeTex.colorSpace=THREE.SRGBColorSpace;shadeTex.wrapS=THREE.RepeatWrapping;
+  return shadeTex;
+}
 function mat(color, metalness=0.06, roughness=.67, emissive=null) {
   const key=[color,metalness,roughness,emissive].join('|');
-  if(!materialCache.has(key)) materialCache.set(key,new THREE.MeshStandardMaterial({color,metalness,roughness,...(emissive?{emissive,emissiveIntensity:.85}:{})}));
+  if(!materialCache.has(key)) materialCache.set(key,new THREE.MeshStandardMaterial({color,metalness,roughness,...(emissive?{emissiveIntensity:.85,emissive}:{map:shadeTexture()})}));
   return materialCache.get(key);
 }
 const geo={
@@ -290,6 +303,10 @@ export function createCharacter(idOrDef){
       oval(e,eyeMat,0,0,.012,.063,.035,.018);
       oval(e,mat(id==='sabretooth'?'#9b8545':['wanda','loki'].includes(id)?'#4b756e':'#334d69'),-side*.004,0,.029,.022,.027,.008);
       oval(e,black,-side*.004,0,.034,.010,.018,.004);
+      oval(e,white,-side*.004+.009,.011,.039,.0065,.0065,.003);                              // lichtpuntje in het oog
+      const lash=oval(e,mat(feminine?'#1d1417':'#2a211f'),0,.036,.026,.07,.011,.012);lash.rotation.z=side*.09;   // bovenste ooglid
+      if(feminine){const l2=oval(e,mat('#1d1417'),side*.062,.03,.024,.018,.007,.008);l2.rotation.z=side*.5;}
+      oval(head,mat(feminine?'#e8a9a6':'#dc9f94',0,.9),side*.15,-.06,.215,.036,.02,.012);  // wang
     }
     const lid=oval(head,headMat,side*.108,.055,.281,.095*wide,.048,.01);lid.visible=false;lids.push(lid);
     if(!lens){const eyebrow=oval(head,mat(id==='thanos'?'#654675':id==='sabretooth'?'#8b7449':id==='thor'?'#8f774d':['wanda','widow'].includes(id)?'#704233':'#403632'),side*.108,id==='thanos'?.133:.121,id==='thanos'?.247:.223,id==='thanos'?.082:.061,id==='thanos'?.019:.009,.009);eyebrow.rotation.z=-side*(id==='thanos'?.12:.06);}
