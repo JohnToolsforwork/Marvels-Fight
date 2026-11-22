@@ -278,7 +278,7 @@ export function createCharacter(idOrDef){
   const lens=['spiderman','ironman','panther','killmonger','venom','ultron','goblin','antman','wolverine','doom','electro','deadpool'].includes(id);
   const eyeMat=mat(['ultron','antman'].includes(id)?'#ff4453':['goblin','electro'].includes(id)?'#fee381':'#edf5f6',.06,.23,lens?(['ultron','antman'].includes(id)?'#ff2233':id==='ironman'?'#7ce8ff':id==='doom'?'#5bcf91':id==='electro'?'#f3d568':null):null);
   for(const side of [-1,1]){
-    const e=group(head,side*.108,.055,.246);eyes.push(e);
+    const e=group(head,side*.108,.055,.222);eyes.push(e);
     const wide=id==='venom'?1.3:id==='spiderman'?1.1:1;
     if(lens&&['spiderman','venom','panther','killmonger','goblin','wolverine','deadpool'].includes(id)){
       const lensGeo=lensGeometries[side===-1?0:1];
@@ -292,7 +292,7 @@ export function createCharacter(idOrDef){
       oval(e,black,-side*.004,0,.034,.010,.018,.004);
     }
     const lid=oval(head,headMat,side*.108,.055,.281,.095*wide,.048,.01);lid.visible=false;lids.push(lid);
-    if(!lens){const eyebrow=oval(head,mat(id==='thanos'?'#654675':id==='sabretooth'?'#8b7449':id==='thor'?'#8f774d':['wanda','widow'].includes(id)?'#704233':'#403632'),side*.108,id==='thanos'?.133:.121,id==='thanos'?.267:.243,id==='thanos'?.082:.061,id==='thanos'?.019:.009,.009);eyebrow.rotation.z=-side*(id==='thanos'?.12:.06);}
+    if(!lens){const eyebrow=oval(head,mat(id==='thanos'?'#654675':id==='sabretooth'?'#8b7449':id==='thor'?'#8f774d':['wanda','widow'].includes(id)?'#704233':'#403632'),side*.108,id==='thanos'?.133:.121,id==='thanos'?.247:.223,id==='thanos'?.082:.061,id==='thanos'?.019:.009,.009);eyebrow.rotation.z=-side*(id==='thanos'?.12:.06);}
   }
   let jaw=null;
   if(exposed || ['captain','wolverine'].includes(id)){
@@ -338,7 +338,7 @@ export function createCharacter(idOrDef){
     for(const x of [-.24,.24])for(const y of [1.61,1.97])disc(body,steel,x,y,.29,.09,.032);
     // Mjölnir hangs below the hand and outside the hip. Placing the head above
     // the grip hid it inside Thor's forearm in the original resting pose.
-    const hammer=group(hands[1],.105,-.025,.13);hammer.name='Mjölnir';
+    const hammer=group(hands[1],.02,-.03,.05);hammer.name='Mjölnir';
     tube(hammer,mat('#815b3d'),[0,.055,0],[0,-.435,0],.039);
     for(const yy of [-.08,-.20,-.32]){const band=mesh(geo.tube,mat('#493529'),hammer,0,yy,0,.041,.018,.041);band.name='Leather grip band';}
     const hammerHead=box(hammer,mat('#adbfc9',.78,.3),0,-.49,0,.57,.29,.32);hammerHead.name='Mjölnir metal head';
@@ -565,7 +565,7 @@ export function createCharacter(idOrDef){
       if(side===-1){tube(sheath,darkGear,[0,.63,0],[0,.92,0],.03);box(sheath,steel,0,.65,0,.15,.025,.065);}
       accessories.crossedScabbards.push(sheath);
     }
-    const katana=group(hands[1],.085,-.025,.12);katana.name='Deadpool katana';
+    const katana=group(hands[1],.015,-.025,.05);katana.name='Deadpool katana';
     tube(katana,darkGear,[0,.07,0],[0,-.13,0],.032);
     for(const y of [.015,-.065])mesh(geo.tube,red,katana,0,y,0,.035,.022,.035);
     box(katana,steel,0,-.14,0,.17,.026,.073);
@@ -635,6 +635,32 @@ export function createCharacter(idOrDef){
     const wb=mat('#5c1520',0,.8);
     for(let k=0;k<7;k++){const ang=-Math.PI*.9+k*(Math.PI*1.8/6);curve(head,wb,[[0,.03,.26],[Math.sin(ang)*.12,.03+Math.cos(ang)*.12,.27],[Math.sin(ang)*.24,.03+Math.cos(ang)*.24,.22]],.0055);}
     for(const rr of [.1,.18])curve(head,wb,[[-rr*1.2,.03,.255],[-rr*.6,.03+rr*.9,.265],[rr*.6,.03+rr*.9,.265],[rr*1.2,.03,.255]],.005);
+  }
+  // ---- Extra verfraaiing voor iedereen: spiergroepen, banden, kniebeschermers en per personage een eigen detail.
+  if(!bareMassive&&!id.startsWith('civilian')){
+    const tint=(hex,f)=>{const c=new THREE.Color(hex);if(f>0)c.lerp(new THREE.Color('#ffffff'),f);else c.lerp(new THREE.Color('#000000'),-f);return '#'+c.getHexString();};
+    const hi=mat(tint(def.color,.07),armored?.5:.02,armored?.34:.8),lo=mat(tint(def.color,-.25),armored?.5:.02,armored?.34:.8);
+    const cz=chestZ-.012,sc=slenderSpider?.82:feminine?.9:chunky?1.25:1;
+    if(!['ironman','ultron','doom','vision','antman'].includes(id)){
+      for(const sd of [-1,1]){oval(body,hi,sd*.125*sc,1.8,cz-.004,.13*sc,.085,.02);oval(body,lo,sd*.1*sc,1.62,cz-.012,.085*sc,.03,.014);}
+      box(body,lo,0,1.66,cz-.018,.012,.36,.012);
+    }
+    for(const a of arms)mesh(geo.gauntlet,accent,a,0,-.34,0,.128*K0,.034,.133*K0).name='Arm band';
+    for(const k of knees){oval(k,accent,0,.0,.115*K0,.085*K0,.085*K0,.05);mesh(geo.gauntlet,accent,k,0,-.43,.01,.138*K0,.03,.15*K0).name='Boot cuff';}
+    if(['widow','hawkeye','deadpool','wolverine','redskull','killmonger','captain'].includes(id))for(const lg of legs)mesh(geo.gauntlet,darkGear,lg,0,-.3,0,.172*K0,.05,.182*K0).name='Thigh strap';
+    // ---- per personage
+    const zz=cz+.012,yel=mat('#ffe56a',0,.4,'#ffcc33');
+    if(id==='thor'){for(const a of arms)mesh(geo.gauntlet,steel,a,0,-.38,0,.135,.06,.14);}
+    if(id==='captain'){for(let k=0;k<5;k++)box(body,k%2?white:red,0,1.4+k*.055,cz-.03,.38,.028,.012);}
+    if(id==='strange'){oval(body,gold,0,1.96,zz,.065,.065,.02);oval(body,mat('#6ff0a8',0,.3,'#3be08a'),0,1.96,zz+.012,.032,.032,.012);}
+    if(id==='venom'){badge(body,'spider','#f2f2f2',0,1.74,chestZ+.04,.46,.56);}
+    if(id==='killmonger')for(let r=0;r<2;r++)for(let k=0;k<6;k++)oval(body,gold,(k-2.5)*.075,1.72-r*.09,zz,.02,.02,.012);
+    if(id==='electro')curve(body,yel,[[-.2,1.98,zz],[-.04,1.82,zz+.01],[-.15,1.7,zz+.01],[.06,1.56,zz+.01],[-.02,1.44,zz+.01]],.012);
+    if(['thanos','magneto','hela','doom','loki'].includes(id))for(const sd of [-1,1]){oval(body,id==='thanos'||id==='doom'||id==='loki'?gold:accent,sd*.5,2.08,0,.17,.1,.17);}
+    if(id==='sabretooth')for(let k=0;k<10;k++){const ang=k/10*Math.PI*2,fur=mesh(geo.cone,mat('#8a6a3a',0,.95),body,Math.cos(ang)*.26,2.13,Math.sin(ang)*.2,.09,.22,.09);fur.rotation.z=-Math.cos(ang)*.7;fur.rotation.x=Math.sin(ang)*.7;}
+    if(id==='abomination')for(const a of arms)for(let k=0;k<3;k++){const sp=mesh(geo.cone,mat('#5c6b45',0,.9),a.userData.elbow,0,-.1-k*.1,-.1,.05,.14,.05);sp.rotation.x=-Math.PI/2.6;}
+    if(id==='captainmarvel'){curve(body,gold,[[-.3,1.95,zz],[0,1.75,zz+.02],[.3,1.95,zz]],.02);}
+    if(id==='goblin')for(const sd of [-1,1])oval(body,mat('#1d4d2c',0,.8),sd*.27,2.0,0,.17,.1,.15);
   }
   const INK=inkMaterial();
   const inkGeos=new Set([...Object.values(bodyGeometries),geo.hips,geo.upperLimb,geo.lowerLimb,geo.boot,geo.maleFace,geo.femaleFace,geo.titanFace,geo.gauntlet,geo.neck].filter(Boolean));
