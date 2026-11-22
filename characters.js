@@ -306,7 +306,7 @@ export function createCharacter(idOrDef){
       oval(e,white,-side*.004+.009,.011,.039,.0065,.0065,.003);                              // lichtpuntje in het oog
       const lash=oval(e,mat(feminine?'#1d1417':'#2a211f'),0,.036,.026,.07,.011,.012);lash.rotation.z=side*.09;   // bovenste ooglid
       if(feminine){const l2=oval(e,mat('#1d1417'),side*.062,.03,.024,.018,.007,.008);l2.rotation.z=side*.5;}
-      oval(head,mat(feminine?'#e8a9a6':'#dc9f94',0,.9),side*.15,-.06,.215,.036,.02,.012);  // wang
+      if(face===skin||face===lightSkin)oval(head,mat(feminine?'#e8b0aa':'#dca79b',0,.9),side*.15,-.065,.213,.03,.017,.01);  // wang
     }
     const lid=oval(head,headMat,side*.108,.055,.281,.095*wide,.048,.01);lid.visible=false;lids.push(lid);
     if(!lens){const eyebrow=oval(head,mat(id==='thanos'?'#654675':id==='sabretooth'?'#8b7449':id==='thor'?'#8f774d':['wanda','widow'].includes(id)?'#704233':'#403632'),side*.108,id==='thanos'?.133:.121,id==='thanos'?.247:.223,id==='thanos'?.082:.061,id==='thanos'?.019:.009,.009);eyebrow.rotation.z=-side*(id==='thanos'?.12:.06);}
@@ -678,6 +678,39 @@ export function createCharacter(idOrDef){
     if(id==='abomination')for(const a of arms)for(let k=0;k<3;k++){const sp=mesh(geo.cone,mat('#5c6b45',0,.9),a.userData.elbow,0,-.1-k*.1,-.1,.05,.14,.05);sp.rotation.x=-Math.PI/2.6;}
     if(id==='captainmarvel'){curve(body,gold,[[-.3,1.95,zz],[0,1.75,zz+.02],[.3,1.95,zz]],.02);}
     if(id==='goblin')for(const sd of [-1,1])oval(body,mat('#1d4d2c',0,.8),sd*.27,2.0,0,.17,.1,.15);
+    const glowRed=mat('#ff4458',.3,.3,'#d11f3a'),glowGreen=mat('#53f0a0',0,.3,'#2ad07a'),cream=mat('#e7dcc0',0,.6);
+    if(id==='redskull'){
+      for(const sd of [-1,1]){oval(head,mat('#3a0d12',0,.9),sd*.108,.05,.212,.085,.075,.03);oval(head,mat('#8f2528',0,.8),sd*.17,-.035,.215,.05,.035,.02);oval(head,black,sd*.017,-.04,.268,.013,.024,.01);}
+      for(let k=-3;k<=3;k++)box(head,cream,k*.021,-.147,.252,.017,.024,.008);
+      box(body,black,0,1.7,cz+.02,.012,.3,.01);                                       // jas-sluiting
+    }
+    if(id==='abomination'){
+      for(const y of [1.4,1.6,1.8])for(const sd of [-1,1])oval(body,mat('#38442b',0,.95),sd*.18,y,zz,.11,.055,.03);
+      for(let k=0;k<5;k++)oval(body,mat('#aab27a',0,.9),0,1.32+k*.09,zz,.16,.045,.02);
+      for(let k=0;k<6;k++){const sp=mesh(geo.cone,mat('#4c5a38',0,.9),body,0,1.35+k*.14,-.27,.07,.2,.07);sp.rotation.x=-Math.PI/2.2;}
+      oval(head,mat('#38442b',0,.9),0,.15,.232,.25,.045,.05);
+      for(const sd of [-1,1]){const fin=mesh(geo.cone,mat('#4c5a38',0,.9),head,sd*.3,.06,0,.06,.2,.05);fin.rotation.z=-sd*1.2;}
+      for(let k=-2;k<=2;k++)box(head,cream,k*.024,-.148,.253,.016,.03,.008);
+    }
+    if(id==='hela'){
+      for(const sd of [-1,1]){curve(body,glowGreen,[[sd*.22,2.0,zz],[sd*.12,1.82,zz+.005],[sd*.2,1.62,zz+.005],[sd*.1,1.45,zz+.005]],.009);oval(head,mat('#141a1c',0,.9),sd*.108,.075,.236,.078,.03,.012);}
+      curve(body,steel,[[-.26,1.26,.21],[-.1,1.2,.26],[.1,1.2,.26],[.26,1.26,.21]],.012);
+      for(const a of arms)mesh(geo.gauntlet,steel,a.userData.elbow,0,-.2,.01,.115,.1,.12);
+    }
+    if(id==='ultron'){
+      for(const k of knees)mesh(geo.gauntlet,glowRed,k,0,0,.0,.14,.04,.145);
+      for(const a of arms)mesh(geo.gauntlet,glowRed,a.userData.elbow,0,.0,0,.115,.035,.12);
+      for(const sd of [-1,1]){const sp=mesh(geo.cone,steel,body,sd*.5,2.2,0,.1,.32,.1);sp.rotation.z=-sd*.45;}
+      box(head,steel,0,.33,-.03,.05,.14,.32);
+      for(const sd of [-1,1]){curve(body,glowRed,[[sd*.12,1.62,zz],[sd*.06,1.48,zz+.005],[sd*.12,1.34,zz+.005]],.008);for(let k=0;k<3;k++)box(head,black,sd*.17,-.04-k*.03,.245,.06,.008,.01);}
+    }
+    if(id==='wanda'){
+      const dk=mat('#4a0f1f',.1,.5),gld=mat('#e2b35a',.8,.3),glw=mat('#ff4d73',.1,.3,'#d1244f');
+      for(let k=0;k<4;k++){for(const sg of [-1,1]){const l=box(body,dk,0,1.42+k*.075,zz,.15,.012,.01);l.rotation.z=sg*.45;}}   // korsetveters
+      curve(body,gld,[[-.2,2.03,zz],[0,1.83,zz+.012],[.2,2.03,zz]],.012);
+      for(const a of arms){const t=new THREE.Mesh(new THREE.TorusGeometry(.105,.012,6,18),glw);t.rotation.x=Math.PI/2;t.position.set(0,-.36,.015);a.userData.elbow.add(t);}
+      for(const sd of [-1,1])oval(head,mat('#3b0e18'),sd*.108,.075,.236,.075,.025,.012);
+    }
   }
   const INK=inkMaterial();
   const inkGeos=new Set([...Object.values(bodyGeometries),geo.hips,geo.upperLimb,geo.lowerLimb,geo.boot,geo.maleFace,geo.femaleFace,geo.titanFace,geo.gauntlet,geo.neck].filter(Boolean));
