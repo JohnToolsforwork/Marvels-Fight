@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122102530';
-import {startUpdater} from './update.js?v=20261122102530';
-import {createCivilians} from './civilians.js?v=20261122102530';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122102530';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122102530';
-import {createWorld} from './world.js?v=20261122102530';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122102530';
-import {createDuel} from './pvp.js?v=20261122102530';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122102530';
-import {updateNPCFlight} from './npc-flight.js?v=20261122102530';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122102530';
+import {music} from './music.js?v=20261122103630';
+import {startUpdater} from './update.js?v=20261122103630';
+import {createCivilians} from './civilians.js?v=20261122103630';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122103630';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122103630';
+import {createWorld} from './world.js?v=20261122103630';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122103630';
+import {createDuel} from './pvp.js?v=20261122103630';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122103630';
+import {updateNPCFlight} from './npc-flight.js?v=20261122103630';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122103630';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -398,7 +398,7 @@ function awardCivilian(a,text){
 }
 const civ=createCivilians({scene,createCharacter,updateCharacter,slideMove,blocked,getWorld:()=>world,
  onRescue:(hero)=>{awardCivilian(hero,'Burger gered! +1 KO');if(mode==='story'&&story&&hero.player>=0){story.resc++;storyProgress();}},onKill:(a)=>awardCivilian(a,'Burger uitgeschakeld +1 KO'),say:(t)=>toast(t,3)});
-window.__mf={civilians:()=>civ.count};
+window.__mf={civilians:()=>civ.count,houses:()=>world.houses};
 function freeNear(x,z,r){
  for(let ring=0;ring<8;ring++)for(let k=0;k<(ring?12:1);k++){
   const ang=k/12*Math.PI*2,px=x+Math.cos(ang)*ring*2.2,pz=z+Math.sin(ang)*ring*2.2;

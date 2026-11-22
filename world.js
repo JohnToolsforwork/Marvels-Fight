@@ -60,10 +60,16 @@ export function createWorld(scene, id = 'newyork') {
         c.fillStyle='#ffffff15';c.fillRect(x+2,y+2,bw-4,1);
       }
     }
+    if(kind==='grass') {
+      for(let n=0;n<2600;n++){const t=rnd();c.strokeStyle=t<.33?'#3f8a3f':t<.66?'#5ab255':'#74c768';c.globalAlpha=.55;c.lineWidth=1+rnd()*1.4;const x=rnd()*256,y=rnd()*256;c.beginPath();c.moveTo(x,y);c.lineTo(x+(rnd()-.5)*4,y-3-rnd()*5);c.stroke();}
+      c.globalAlpha=1;
+      for(let n=0;n<14;n++){c.fillStyle=['#ffffffb0','#ffe35aa8','#ff9ac0a0'][n%3];const x=rnd()*256,y=rnd()*256;c.beginPath();c.arc(x,y,1.4+rnd()*1.2,0,6.3);c.fill();}
+      for(let n=0;n<10;n++){c.fillStyle='#2f7a3a22';c.beginPath();c.ellipse(rnd()*256,rnd()*256,14+rnd()*20,9+rnd()*14,rnd()*3,0,6.3);c.fill();}
+    }
     if(kind==='road') {for(let n=0;n<1600;n++){c.fillStyle=n%3?'#ffffff12':'#00000018';c.fillRect(rnd()*256,rnd()*256,1+rnd()*1.5,1+rnd()*1.5);}}
     if(kind==='water') { for(let n=0;n<65;n++) {c.strokeStyle=n%2?line:'#b4e9ea50';c.lineWidth=1+rnd()*2;c.beginPath();let x=rnd()*256,y=rnd()*256;c.moveTo(x,y);c.bezierCurveTo(x+15,y-3,x+25,y+4,x+45,y);c.stroke();} }
     for(let n=0;n<650;n++) { c.fillStyle=n%2?'#ffffff0c':'#0000000d';c.fillRect(rnd()*256,rnd()*256,1+rnd()*2,1+rnd()*2); }
-    const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;const repeats=kind==='water'?6:kind==='brick'?3:kind==='limestone'?2:12;t.repeat.set(repeats,repeats);t.anisotropy=4;textures.add(t);return t;
+    const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;const repeats=kind==='water'?6:kind==='brick'?3:kind==='limestone'?2:kind==='grass'?110:12;t.repeat.set(repeats,repeats);t.anisotropy=4;textures.add(t);return t;
   }
   function label(text,x,y,z,w,h,opts={}) {
     const canvas=document.createElement('canvas');canvas.width=opts.large?1024:512;canvas.height=256;const c=canvas.getContext('2d');
@@ -139,24 +145,37 @@ export function createWorld(scene, id = 'newyork') {
   const houses = [], CITY = 330;
   const ZC = Math.round(SIZE*.55), spawnZones = id!=='avengers' ? [{x:0,z:0},{x:-ZC,z:-ZC},{x:ZC,z:-ZC},{x:-ZC,z:ZC},{x:ZC,z:ZC}] : null;
   // Een echt gebouw: sokkel, kroonlijst, ramen op alle vier de zijden en een deur met afdak.
+  // Een echt gebouw: sokkel met winkelpui en luifel, ramen (sommige verlicht), kroonlijst, dakopbouw en bij hoge gebouwen een trap-top.
+  const awnings=[mat('awnA','#c0392b'),mat('awnB','#2e86c1'),mat('awnC','#27ae60'),mat('awnD','#d68910'),mat('awnE','#8e44ad')];
   function building(x,z,w,h,d,wall,trim,windowMat,doorMat) {
     box(wall,x,h/2,z,w,h,d);
     box(trim,x,.5,z,w+.5,1,d+.5);
     box(trim,x,h+.3,z,w+.4,.6,d+.4);
-    box(dark,x+w*.2,h+1.1,z-d*.15,Math.min(3,w*.35),1.2,Math.min(3,d*.35),0,true);
+    box(wall,x,h+1.1,z,w-.6,1.0,d-.6,0,true);                       // dakrand
+    if(h>38){box(wall,x,h+h*.13,z,w*.68,h*.26,d*.68);box(trim,x,h+h*.26+.3,z,w*.68+.4,.6,d*.68+.4,0,true);}   // trap-top
+    const topY=h>38?h+h*.26+.6:h+.6;
+    const rr=rnd();
+    if(rr<.4)box(metal,x+w*.2,topY+.7,z-d*.15,Math.min(3.2,w*.36),1.4,Math.min(3.2,d*.36),0,true);               // airco
+    else if(rr<.65){cyl(bark,x-w*.15,topY+1.4,z+d*.1,1.2,2.8,true);add('cone',dark,x-w*.15,topY+3.3,z+d*.1,2.8,1.4,2.8,0,0,0,true);}   // watertank
+    else if(rr<.85)beam(metal,[x+w*.25,topY,z],[x+w*.25,topY+7,z],.08,true);                                         // antenne
     const nx=Math.max(1,Math.floor(w/3.4)),nz=Math.max(1,Math.floor(d/3.4));
-    for(let y=2.9;y<h-1.4;y+=3.3) {
+    for(let y=5.2;y<h-1.4;y+=3.3) {
       for(let i=0;i<nx;i++) {
         const ox=(i-(nx-1)/2)*3.2;
-        box(windowMat,x+ox,y,z+d/2+.07,1.5,1.8,.14,0,true);box(windowMat,x+ox,y,z-d/2-.07,1.5,1.8,.14,0,true);
+        box(rnd()<.2?lit:windowMat,x+ox,y,z+d/2+.07,1.5,1.8,.14,0,true);box(rnd()<.2?lit:windowMat,x+ox,y,z-d/2-.07,1.5,1.8,.14,0,true);
       }
       for(let i=0;i<nz;i++) {
         const oz=(i-(nz-1)/2)*3.2;
-        box(windowMat,x+w/2+.07,y,z+oz,.14,1.8,1.5,0,true);box(windowMat,x-w/2-.07,y,z+oz,.14,1.8,1.5,0,true);
+        box(rnd()<.2?lit:windowMat,x+w/2+.07,y,z+oz,.14,1.8,1.5,0,true);box(rnd()<.2?lit:windowMat,x-w/2-.07,y,z+oz,.14,1.8,1.5,0,true);
       }
     }
-    box(doorMat,x,1.55,z+d/2+.09,2.3,3.1,.16,0,true);
-    box(trim,x,3.35,z+d/2+.55,3.4,.25,1.2,0,true);
+    // winkelpui op de begane grond (voorkant) met luifel en bordje
+    const aw=awnings[Math.floor(rnd()*awnings.length)];
+    box(dark,x,2.0,z+d/2+.06,w*.78,2.3,.12,0,true);
+    for(let i=0;i<nx;i++){box(glass,x+(i-(nx-1)/2)*3.2,1.9,z+d/2+.12,2.4,1.9,.1,0,true);}
+    box(aw,x,3.35,z+d/2+.8,w*.8,.22,1.7,0,true);
+    box(doorMat,x+w*.3,1.4,z+d/2+.14,1.7,2.6,.14,0,true);
+    box(trim,x,4.0,z+d/2+.1,w*.6,.7,.12,0,true);
   }
   function fillRing(kind) {
     const groundCol={newyork:'#6b7078',wakanda:'#4e8a5c',asgard:'#a9915a',kamartaj:'#8b7d62',titan:'#a8653a',savage:'#3f7a46'}[kind]||'#777';
@@ -165,12 +184,30 @@ export function createWorld(scene, id = 'newyork') {
       box(fg,mid,-.13,0,wid,.1,half*2);box(fg,-mid,-.13,0,wid,.1,half*2);box(fg,0,-.13,mid,114,.1,wid);box(fg,0,-.13,-mid,114,.1,wid);}
     const wall1=mat('fw1'+kind,{newyork:'#8c93a0',wakanda:'#b8a37a',asgard:'#d2b46a',kamartaj:'#a66a4a',titan:'#7e4a30',savage:'#6e6a5a'}[kind]||'#888');
     const wall2=mat('fw2'+kind,{newyork:'#5d7a92',wakanda:'#7a5bb8',asgard:'#e8d28f',kamartaj:'#8e7a56',titan:'#a8653a',savage:'#8c8a78'}[kind]||'#666');
+    // Straten met stoepen en een gestippelde middenlijn (alleen binnen de stad); gebouwen krijgen een kleurenpalet.
+    const palettes={newyork:['#b0b4bc','#c8b8a6','#a4533f','#7e97ad','#d8d2c4','#8f8f99','#9c7b64'],wakanda:['#b8a37a','#7a5bb8','#a99a78','#6e5aa0'],asgard:['#d2b46a','#e8d28f','#c9a24f','#efe0a8'],kamartaj:['#a66a4a','#8e7a56','#b88a5a','#9c6f55'],titan:['#7e4a30','#a8653a'],savage:['#6e6a5a','#8c8a78']};
+    const pal=(palettes[kind]||palettes.newyork).map((c,k)=>mat('fwp'+kind+k,c));
+    const pickWall=()=>pal[Math.floor(rnd()*pal.length)];
+    if(kind!=='titan'&&kind!=='savage'){
+      const roadCol={newyork:'#454b55',wakanda:'#4a4358',asgard:'#a98d54',kamartaj:'#8a7c66'}[kind]||'#444',walkCol={newyork:'#c9c9c2',wakanda:'#b9b2a2',asgard:'#e4d29a',kamartaj:'#b7aa90'}[kind]||'#bbb';
+      const roadM=mat('fillRoad'+kind,roadCol),walkM=mat('fillWalk'+kind,walkCol),lineM=mat('fillLine'+kind,kind==='asgard'?'#fff3c4':'#e9d36a');
+      const lines=[0,66,-66,132,-132,165,-165,231,-231,297,-297];
+      const road=(cx,cz,len,alongX)=>{ // een straat: asfalt, twee stoepen en middenstreepjes
+        const rw=14,sw=3.2;
+        if(alongX){box(roadM,cx,-.01,cz,len,.05,rw,0,true);box(walkM,cx,.02,cz-rw/2-sw/2,len,.07,sw,0,true);box(walkM,cx,.02,cz+rw/2+sw/2,len,.07,sw,0,true);for(let t=-len/2+6;t<len/2-3;t+=10)box(lineM,cx+t,.03,cz,4.5,.02,.35,0,true);}
+        else{box(roadM,cx,-.01,cz,rw,.05,len,0,true);box(walkM,cx-rw/2-sw/2,.02,cz,sw,.07,len,0,true);box(walkM,cx+rw/2+sw/2,.02,cz,sw,.07,len,0,true);for(let t=-len/2+6;t<len/2-3;t+=10)box(lineM,cx,.03,cz+t,.35,.02,4.5,0,true);}
+      };
+      for(const g of lines){
+        if(g===0){road(0,(62+CITY)/2,CITY-62,false);road(0,-(62+CITY)/2,CITY-62,false);road((62+CITY)/2,0,CITY-62,true);road(-(62+CITY)/2,0,CITY-62,true);}
+        else{road(g,0,CITY*2,false);road(0,g,CITY*2,true);}
+      }
+    }
     for(let gx=-132;gx<=132;gx+=22)for(let gz=-132;gz<=132;gz+=22) {
       if(Math.abs(gx)<66&&Math.abs(gz)<66)continue;
       if(Math.abs(gx)%66<1||Math.abs(gz)%66<1)continue;
       if(spawnZones&&spawnZones.some(q=>Math.abs(gx-q.x)<28&&Math.abs(gz-q.z)<28))continue;
       const x=gx+(rnd()-.5)*5,z=gz+(rnd()-.5)*5,w=8+rnd()*8,d=8+rnd()*8,r=rnd();
-      if(kind==='newyork') {const h=9+rnd()*34;building(x,z,w,h,d,r>.5?wall1:wall2,trim,glass,dark);}
+      if(kind==='newyork') {const h=9+rnd()*34;building(x,z,w,h,d,pickWall(),trim,glass,dark);}
       else if(kind==='wakanda') {if(r>.6){const h=14+rnd()*22;building(x,z,6,h,6,wall2,metal,blueGlow,blueGlow);box(blueGlow,x,h+1.6,z,2,1.4,2,0,true);}else{const h=5+rnd()*8;cyl(wall1,x,h/2,z,w/2.4,h);sphere(wall2,x,h,z,w/2.4,2.2,w/2.4);box(dark,x,1.4,z+w/2.4+.05,1.6,2.8,.12,0,true);}}
       else if(kind==='asgard') {const h=8+rnd()*22;building(x,z,w,h,d,wall1,gold,lit,gold);box(wall2,x,h+1.6,z,w*.7,2,d*.7,0,true);if(r>.5)cyl(wall2,x+w/2+1.6,(h+6)/2,z,1.2,h+6);}
       else if(kind==='kamartaj') {const h=5+rnd()*8;building(x,z,w,h,d,wall1,wall2,dark,bark);box(wall2,x,h+1.4,z,w+2,1.2,d+2,0,true);if(r>.6)tree(x+w,z+d,1.1,1);}
@@ -188,33 +225,51 @@ export function createWorld(scene, id = 'newyork') {
       else if(kind==='savage') {if(r>.4){for(let k=0;k<3;k++)tree(x+(rnd()-.5)*30,z+(rnd()-.5)*30,3+rnd()*2.5,r>.7?1:0);}else mountain(x,z,w*2,15+rnd()*40,d*2,wall1);}
       else {
         const h=22+rnd()*(kind==='kamartaj'?20:68);
-        if(near)building(x,z,w,h,d,r>.5?wall1:wall2,trim,kind==='asgard'?lit:glass,dark);
-        else {box(r>.5?wall1:wall2,x,h/2,z,w,h,d);box(trim,x,h+.4,z,w+.6,.8,d+.6,0,true);}
+        if(near)building(x,z,w,h,d,pickWall(),trim,kind==='asgard'?lit:glass,dark);
+        else {box(pickWall(),x,h/2,z,w,h,d);box(trim,x,h+.4,z,w+.6,.8,d+.6,0,true);}
       }
     }
 
     // Om de stad heen: gras met kleine huisjes. Wie bij de deur komt, wordt naar een willekeurige plek in de stad geteleporteerd.
     if(kind!=='titan'&&kind!=='savage') {
-      const grass=mat('outskirtsGrass','#4d9a4a'),half=boundary+30;
+      const grass=mat('outskirtsGrass','#ffffff',{map:surfaceTexture('grass','#52a24d','#3b7d3a')}),half=boundary+30;grass.userData.softwareTexture=true;
       const gm=(CITY+half)/2,gw=half-CITY;
       box(grass,gm,-.05,0,gw,.1,half*2,0,true);box(grass,-gm,-.05,0,gw,.1,half*2,0,true);
       box(grass,0,-.05,gm,CITY*2,.1,gw,0,true);box(grass,0,-.05,-gm,CITY*2,.1,gw,0,true);
     }
     const wallM=mat('houseWall','#efe6cf'),roofs=[mat('houseRoofA','#b5483a'),mat('houseRoofB','#3f6fb0'),mat('houseRoofC','#c28a2b')],glowDoor=mat('houseDoor','#8fe9ff',{emissive:'#35c7f0',emissiveIntensity:.9});
     const placed=[];
+    const wood=mat('houseWood','#7a5230'),stoneM=mat('houseStone','#a9a79b'),flowerCols=['#ff6f91','#ffd23a','#ff8a3a','#c46bff','#ff4d4d'];
     function house(x,z) {
       if(Math.abs(x)>boundary-25||Math.abs(z)>boundary-25)return;
       if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<28))return;
       if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<32))return;
       placed.push({x,z});
       const rot=Math.round(Math.atan2(-x,-z)/(Math.PI/2))*(Math.PI/2),w=7,d=6,h=4,k=houses.length%3,sn=Math.sin(rot),cs=Math.cos(rot);
-      box(wallM,x,h/2,z,w,h,d,rot);
-      add('cone',roofs[k],x,h+1.5,z,w*1.5,3.2,d*1.5,rot+Math.PI/4);
-      box(glowDoor,x+sn*(d/2+.06),1.35,z+cs*(d/2+.06),1.8,2.7,.12,rot,true);
-      const tx=x+sn*(d/2+2.4),tz=z+cs*(d/2+2.4);
+      const P=(lx,lz)=>[x+cs*lx+sn*lz,z-sn*lx+cs*lz];            // lokaal (rechts,vooruit) -> wereld
+      const colors=['#efe6cf','#f2d9b8','#dfe9ee','#e8d4d4'],wm=mat('houseWall'+(houses.length%4),colors[houses.length%4]);
+      box(wm,x,h/2,z,w,h,d,rot);                                  // muren
+      box(stoneM,x,.35,z,w+.3,.7,d+.3,rot,true);                  // sokkel
+      add('cone',roofs[k],x,h+1.55,z,w*1.55,3.3,d*1.55,rot+Math.PI/4);   // dak met flinke rand
+      box(roofs[k],x,h+.15,z,w+.9,.3,d+.9,rot,true);              // dakrand
+      let [cx,cz]=P(1.9,-1.1);box(stoneM,cx,h+2.3,cz,.9,2.2,.9,rot,true);box(dark,cx,h+3.45,cz,1.1,.2,1.1,rot,true); // schoorsteen
+      const [dx,dz]=P(0,d/2+.06);box(glowDoor,dx,1.35,dz,1.8,2.7,.12,rot,true);                 // lichtgevende deur
+      let [fx,fz]=P(0,d/2+.11);box(wood,fx,2.85,fz,2.3,.28,.2,rot,true);box(wood,P(-1.05,d/2+.1)[0],1.4,P(-1.05,d/2+.1)[1],.26,2.8,.2,rot,true);box(wood,P(1.05,d/2+.1)[0],1.4,P(1.05,d/2+.1)[1],.26,2.8,.2,rot,true); // deurkozijn
+      [fx,fz]=P(0,d/2+.9);box(stoneM,fx,.14,fz,3.2,.28,1.5,rot,true);                           // stoep
+      for(const lx of [-2.3,2.3]){                                 // voorramen met luiken
+        const [wx,wz]=P(lx,d/2+.05);box(glass,wx,2.2,wz,1.4,1.3,.14,rot,true);box(trim,wx,2.2,wz,1.6,.12,.18,rot,true);
+        for(const sd of [-1,1]){const [sx2,sz2]=P(lx+sd*.95,d/2+.08);box(roofs[(k+1)%3],sx2,2.2,sz2,.4,1.4,.1,rot,true);}
+        const [bx,bz]=P(lx,d/2+.55);box(wood,bx,1.45,bz,1.6,.3,.5,rot,true);                    // bloembak
+        for(let f=-1;f<=1;f++){const [px,pz]=P(lx+f*.45,d/2+.55);sphere(f%2?leaf2:leaf,px,1.75,pz,.2,.17,.2,true);sphere(mat('flow'+((f+houses.length+4)%5),flowerCols[(f+houses.length+4)%5]),px,1.95,pz,.13,.13,.13,true);}
+      }
+      for(const sd of [-1,1]){const [wx,wz]=P(sd*(w/2+.05),0);box(glass,wx,2.2,wz,.14,1.3,1.4,rot,true);}   // zijramen
+      {const [wx,wz]=P(0,-d/2-.05);box(glass,wx,2.2,wz,1.4,1.3,.14,rot,true);}                             // achterraam
+      for(const ss of [1.4,2.2]){const [px,pz]=P(((houses.length%2)?.25:-.25)*ss,d/2+1.5+ss);box(stoneM,px,.06,pz,1.1,.12,.8,rot,true);}   // tuinpad
+      {const [lx2,lz2]=P(1.9,d/2+.2);cyl(metal,lx2,1.7,lz2,.05,1.5,true);sphere(lit,lx2,2.55,lz2,.17,.2,.17,true);}   // lantaarntje
+      const [tx,tz]=P(0,d/2+2.4);
       ring(glowDoor,tx,.1,tz,1.7);
       beam(glowDoor,[tx,0,tz],[tx,46,tz],.32,true);
-      tree(x-cs*8,z+sn*8,1.1,houses.length%2);
+      {const [tx2,tz2]=P(-7.5,.5);tree(tx2,tz2,1.1,houses.length%2);const [bx2,bz2]=P(5,-.8);sphere(leaf,bx2,.7,bz2,1.1,.8,1.1,true);sphere(leaf2,bx2+.9,.55,bz2+.5,.8,.6,.8,true);}
       houses.push({x,z,tx,tz});
     }
     for(let i=0;i<90;i++){
@@ -222,7 +277,20 @@ export function createWorld(scene, id = 'newyork') {
       house(Math.sin(a)*rr,Math.cos(a)*rr);
     }
     if(spawnZones)for(const q of spawnZones.slice(1))for(let i=0;i<5;i++){const a=i/5*Math.PI*2+rnd(),rr=48+rnd()*35;house(q.x+Math.sin(a)*rr,q.z+Math.cos(a)*rr);}
-    for(let i=0;i<260;i++){const a=rnd()*Math.PI*2,rr=CITY+10+rnd()*(boundary-CITY-40),x=Math.sin(a)*rr,z=Math.cos(a)*rr;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<14))continue;if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<32))continue;tree(x,z,1.4+rnd()*1.6,i%2);}
+    // Bomen en struiken in meerdere soorten: eiken, dennen, herfstbomen, struiken en bloemenvelden.
+    const pineM=mat('pineLeaf','#2f6b45'),pine2=mat('pineLeaf2','#3e8456'),autumn=[mat('autumn1','#d9822b'),mat('autumn2','#c4452f'),mat('autumn3','#e0b640')],blossom=mat('blossom','#ffb3cf');
+    function pineTree(x,z,sc){cyl(bark,x,1.6*sc,z,.28*sc,3.2*sc);for(let t=0;t<4;t++)add('cone',t%2?pine2:pineM,x,(3+t*1.9)*sc,z,(4.4-t*.95)*sc,3.4*sc,(4.4-t*.95)*sc,0);}
+    function autumnTree(x,z,sc,c){cyl(bark,x,1.7*sc,z,.27*sc,3.4*sc);sphere(c,x,4.5*sc,z,1.9*sc,1.7*sc,1.8*sc);sphere(c,x+1.3*sc,3.9*sc,z+.4*sc,1.3*sc,1.2*sc,1.3*sc);sphere(c,x-1.2*sc,4*sc,z-.5*sc,1.4*sc,1.2*sc,1.3*sc);}
+    function bushCluster(x,z,sc){for(let b=0;b<3;b++){const ox=(rnd()-.5)*2.4*sc,oz=(rnd()-.5)*2.4*sc;sphere(b%2?leaf:leaf2,x+ox,.65*sc,z+oz,(1+rnd()*.5)*sc,.75*sc,(1+rnd()*.5)*sc,true);}}
+    function flowerPatch(x,z){for(let f=0;f<9;f++){const ox=(rnd()-.5)*5,oz=(rnd()-.5)*5;sphere(mat('flow'+(f%5),flowerCols[f%5]),x+ox,.22,z+oz,.2,.2,.2,true);}}
+    for(let i=0;i<340;i++){const a=rnd()*Math.PI*2,rr=CITY+10+rnd()*(boundary-CITY-40),x=Math.sin(a)*rr,z=Math.cos(a)*rr;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<14))continue;if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<32))continue;
+      const t=rnd();
+      if(t<.34)tree(x,z,1.4+rnd()*1.6,i%2);
+      else if(t<.62)pineTree(x,z,1.2+rnd()*1.5);
+      else if(t<.74)autumnTree(x,z,1.3+rnd()*1.2,autumn[i%3]);
+      else if(t<.84){tree(x,z,1.2+rnd()*.8,0);sphere(blossom,x,6.1,z,1.5,1,1.5);}
+      else if(t<.94)bushCluster(x,z,1+rnd()*.8);
+      else flowerPatch(x,z);}
   }
 
   // Every environment has continuous ground. The limits are invisible solid boundaries,
