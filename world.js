@@ -237,6 +237,23 @@ export function createWorld(scene, id = 'newyork') {
       box(grass,gm,-.05,0,gw,.1,half*2,0,true);box(grass,-gm,-.05,0,gw,.1,half*2,0,true);
       box(grass,0,-.05,gm,CITY*2,.1,gw,0,true);box(grass,0,-.05,-gm,CITY*2,.1,gw,0,true);
     }
+    // Rijker gras: grote kleurvlakken (maaipatroon), losse graspollen, kleine rotsen en bloemen.
+    if(kind!=='titan'&&kind!=='savage'){
+      const patchCols=['#5aa850','#4a9345','#69b85a','#58a04c','#7bc062'];
+      const pm=patchCols.map((c,k)=>mat('grassPatch'+k,c));
+      for(let i=0;i<260;i++){
+        const a=rnd()*Math.PI*2,rr=CITY+10+rnd()*(boundary-CITY-30),x=Math.sin(a)*rr,z=Math.cos(a)*rr,r=14+rnd()*34;
+        if(Math.abs(x)>boundary-12||Math.abs(z)>boundary-12)continue;
+        add('cyl',pm[i%pm.length],x,.01+i*.00008,z,r*2,.02,r*2*(.6+rnd()*.5),0,0,0,true);
+      }
+      for(let i=0;i<1800;i++){
+        const a=rnd()*Math.PI*2,rr=CITY+8+rnd()*(boundary-CITY-20),x=Math.sin(a)*rr,z=Math.cos(a)*rr;
+        if(Math.abs(x)>boundary-8||Math.abs(z)>boundary-8)continue;
+        const m=i%3===0?leaf2:i%3===1?leaf:pm[2];
+        for(let b=0;b<3;b++)add('cone',m,x+(rnd()-.5)*1.1,.28,z+(rnd()-.5)*1.1,.16+rnd()*.1,.55+rnd()*.35,.16+rnd()*.1,0,0,0,true);
+      }
+      for(let i=0;i<120;i++){const a=rnd()*Math.PI*2,rr=CITY+20+rnd()*(boundary-CITY-40),x=Math.sin(a)*rr,z=Math.cos(a)*rr;sphere(stone,x,.25,z,.6+rnd()*.7,.35+rnd()*.3,.6+rnd()*.7,true);}
+    }
     const wallM=mat('houseWall','#efe6cf'),roofs=[mat('houseRoofA','#b5483a'),mat('houseRoofB','#3f6fb0'),mat('houseRoofC','#c28a2b')],glowDoor=mat('houseDoor','#8fe9ff',{emissive:'#35c7f0',emissiveIntensity:.9});
     const placed=[];
     const wood=mat('houseWood','#7a5230'),stoneM=mat('houseStone','#a9a79b'),flowerCols=['#ff6f91','#ffd23a','#ff8a3a','#c46bff','#ff4d4d'];

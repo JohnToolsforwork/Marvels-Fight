@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122103630';
-import {startUpdater} from './update.js?v=20261122103630';
-import {createCivilians} from './civilians.js?v=20261122103630';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122103630';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122103630';
-import {createWorld} from './world.js?v=20261122103630';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122103630';
-import {createDuel} from './pvp.js?v=20261122103630';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122103630';
-import {updateNPCFlight} from './npc-flight.js?v=20261122103630';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122103630';
+import {music} from './music.js?v=20261122105633';
+import {startUpdater} from './update.js?v=20261122105633';
+import {createCivilians} from './civilians.js?v=20261122105633';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122105633';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122105633';
+import {createWorld} from './world.js?v=20261122105633';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122105633';
+import {createDuel} from './pvp.js?v=20261122105633';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122105633';
+import {updateNPCFlight} from './npc-flight.js?v=20261122105633';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122105633';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -32,7 +32,7 @@ const menuCamera=new THREE.PerspectiveCamera(43,1,.15,500);
 // Teambalans: de helden waren gemiddeld ~20% zwakker (levens x schade), daarom krijgen zij een kleine bonus.
 const BAL={heroes:{hp:1.2,dmg:1.2},villains:{hp:1,dmg:1}};
 const LEADERS={heroes:'captain',villains:'thanos'},isLeader=a=>LEADERS[a.def.team]===a.def.id;
-let spectating=false,specIndex=0,pistolMode=false,camColliders=[];
+let spectating=false,specIndex=0,pistolMode=false,camColliders=[],storyPart=1;
 let cutUntil=0,cutStart=0,cutLines=[],cutCb=null,cutIdx=-1,storyIndex=0,story=null;
 const cameraStates=[{yaw:0,pitch:.38,distance:10.5},{yaw:Math.PI,pitch:.38,distance:10.5}];
 let width=innerWidth,height=innerHeight,world,nav,worldId='newyork',team='heroes',selected='deadpool',p2id='sabretooth',mode='explore',koTotal=0,wave=0,waveBreak=0,survKills=0,state='menu',elapsed=0,matchTime=180,frameCount=0;
@@ -188,6 +188,7 @@ function renderSkins(){
  $('stat-health').textContent=Math.round(d.hp*BAL[d.team].hp*(sk?.hp||1));$('stat-power').textContent=Math.round(d.damage*BAL[d.team].dmg*(sk?.dmg||1));
 }
 function chooseCharacter(id){
+ if(mode==='story'&&storyPart===2&&id==='spiderman'){toast('Spider-Man kun je in deel 2 niet zijn.',3);return;}
  selected=id;const d=ROSTER.find(a=>a.id===id);team=d.team;
  $('character-name').textContent=d.name;$('character-role').textContent=d.role;$('character-power').textContent=d.id==='thor'?'Mjölnir · hamerslag':d.id==='widow'?'Elektrische wapenstok':d.power;$('character-description').textContent=d.description+(FLIERS.has(id)?' Druk op F om te vliegen.':'');
  $('stat-health').textContent=Math.round(d.hp*BAL[d.team].hp);$('stat-speed').textContent=d.speed;$('stat-power').textContent=Math.round(d.damage*BAL[d.team].dmg);
@@ -197,6 +198,7 @@ function chooseCharacter(id){
  previewCharacter();fillP2();renderSkins();
 }
 function fillRoster(){
+ setTimeout(updateLocks,0);
  $('roster').replaceChildren();
  for(const d of ROSTER.filter(a=>a.team===team)){
   const b=document.createElement('button');b.type='button';b.className='roster-card';b.dataset.id=d.id;b.title=d.name+' · '+d.power;b.style.setProperty('--character-color',d.color);
@@ -210,7 +212,7 @@ function fillP2(){
  const ds=ROSTER.filter(a=>a.team!==team);if(!ds.some(a=>a.id===p2id))p2id=ds[0].id;
  $('p2-select').replaceChildren(...ds.map(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;o.selected=d.id===p2id;return o;}));
 }
-function chooseMode(value){mode=value;document.querySelectorAll('[data-mode]').forEach(e=>{e.classList.toggle('active',e.dataset.mode===mode);e.setAttribute('aria-pressed',String(e.dataset.mode===mode));});$('pvp-setup').hidden=mode!=='pvp';}
+function chooseMode(value){mode=value;if($('story-setup'))$('story-setup').hidden=value!=='story';updateLocks();document.querySelectorAll('[data-mode]').forEach(e=>{e.classList.toggle('active',e.dataset.mode===mode);e.setAttribute('aria-pressed',String(e.dataset.mode===mode));});$('pvp-setup').hidden=mode!=='pvp';}
 async function renderPortraits(){
  const r=renderer.isSoftwareRenderer?new SoftwareRenderer({canvas:document.createElement('canvas'),alpha:true}):new THREE.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});r.setSize(160,180);r.setPixelRatio(1);r.outputColorSpace=THREE.SRGBColorSpace;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.35;
  const s=new THREE.Scene();s.add(new THREE.HemisphereLight(0xddecff,0x8c6e70,3));const l=new THREE.DirectionalLight(0xffead4,4);l.position.set(-3,5,5);s.add(l);const fill=new THREE.DirectionalLight(0x75b8ff,2);fill.position.set(3,2,-2);s.add(fill);
@@ -233,7 +235,7 @@ function startGame(){
  players.forEach((a,i)=>{a.player=i;a.marker.visible=true;a.marker.material.opacity=.9;a.marker.scale.setScalar(1.15);cameraStates[i].yaw=a.def.team==='heroes'?0:Math.PI;});
  $('menu').hidden=true;$('hud').hidden=false;$('result-modal').hidden=true;$('p2-hud').hidden=mode!=='pvp';$('split-divider').hidden=mode!=='pvp';$('dialogue').hidden=true;
  $('player-name').textContent=players[0].def.name;$('player-power').textContent=players[0].def.power;$('p2-name').textContent=players[1]?.def.name||'';
- $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?'VERHAAL · HOOFDSTUK '+((storyIndex%CHAPTERS.length)+1):mode==='deathbattle'?'DEATH BATTLE · LAATSTE TEAM OVER':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
+ $('mode-label').textContent=mode==='explore'?'VRIJ VERKENNEN':mode==='survival'?'OVERLEVEN · GOLVEN':mode==='story'?(storyPart===2?'VERHAAL · DEEL 2 · HET ZWARTE PAK':'VERHAAL · DEEL 1 · HOOFDSTUK '+((storyIndex%CHAPTERS.length)+1)):mode==='deathbattle'?'DEATH BATTLE · LAATSTE TEAM OVER':mode==='battle100'?'RACE TOT 100 PUNTEN':mode==='endless'?'EINDELOOS · GEEN WINNAAR':mode==='pvp'?'LOKALE PvP · 15 TEGEN 15':'TEAMGEVECHT · 15 TEGEN 15';
  if($('scene-caption'))$('scene-caption').hidden=true;document.body.classList.add('in-game');document.body.classList.toggle('split-screen',mode==='pvp');resize();
  players.forEach((a,i)=>updateCamera(i,1,true));
  if(mode==='pvp'&&pvpFormat==='duel'){
@@ -243,7 +245,7 @@ function startGame(){
  }else if(mode==='survival')startSurvival();
  else if(mode==='story')startStory();
  else toast(mode==='explore'?'De teams zoeken elkaar op. Verken de wereld of doe mee aan het gevecht.':mode==='endless'?'Eindeloos: de punten lopen door en er is geen winnaar. Ga naar het menu om te stoppen.':mode==='battle100'?'Eerste team met 100 punten wint. Shift om te ontwijken.':'Eerste team met 15 punten wint. Shift om te ontwijken.',5);
- if(duel)civ.clear();else civ.spawn(world.bounds.maxX>100?16:6,players.map(p=>({x:p.group.position.x,z:p.group.position.z})));
+ if(duel)civ.clear();else if(!(mode==='story'&&story?.type==='venom'))civ.spawn(world.bounds.maxX>100?16:6,players.map(p=>({x:p.group.position.x,z:p.group.position.z})));
  if(mode==='story'&&story){civ.forceHelp(story.need);storyProgress(true);}
  updateHud();
 }
@@ -263,9 +265,17 @@ const CHAPTERS=[
   start:'Dit is het! Samen stoppen we Thanos!',taunt:'Jullie zijn te laat. De macht is van mij!',allClear:'Thanos is verslagen! Red nu de laatste burgers!',
   outro:['Thanos ligt geslagen op de grond.','De stad is gered. Jij bent een echte held!']},
 ];
+
+const PART2=[
+ {world:'avengers',title:'Het zwarte pak',type:'venom',allies:['ironman','thor'],venomHp:1.4,
+  intro:['Avengers Tower. Het is stil in de trainingshal.','Spider-Man heeft je gevraagd om te komen.','Hij gedraagt zich vreemd sinds hij een zwart pak vond…'],
+  outro:['Het zwarte pak laat los en verdwijnt.','Spider-Man is gered. Dankzij jou.']},
+];
+function curChapter(){return storyPart===2?PART2[0]:CHAPTERS[storyIndex%CHAPTERS.length];}
 function prepareStory(){
  const d=ROSTER.find(r=>r.id===selected);if(d&&d.team!=='heroes')chooseCharacter('captain');
- const ch=CHAPTERS[storyIndex%CHAPTERS.length];if(worldId!==ch.world)loadWorld(ch.world);
+ if(storyPart===2&&selected==='spiderman'){chooseCharacter('captain');toast('Spider-Man kun je in deel 2 niet zijn. Je speelt nu Captain America.',4);}
+ const ch=curChapter();if(worldId!==ch.world)loadWorld(ch.world);
 }
 function playCinema(lines,cb){
  cutLines=lines;cutCb=cb;cutStart=elapsed;cutIdx=-1;cutUntil=elapsed+3.6*lines.length;
@@ -296,7 +306,8 @@ function sayAs(actor,line,secs=4.5){
  }catch{}}
 }
 function startStory(){
- const ch=CHAPTERS[storyIndex%CHAPTERS.length],me=players[0];
+ const ch=curChapter(),me=players[0];
+ if(ch.type==='venom'){startVenomStory(ch);return;}
  story={ch,total:ch.crooks.length,down:0,resc:0,need:ch.need};
  const crooks=[],allies=[];
  for(const a of actors){
@@ -317,8 +328,90 @@ function startStory(){
   toast('Hoofdstuk '+((storyIndex%CHAPTERS.length)+1)+' · '+ch.title,4);
  });
 }
+
+// ---------- Deel 2: Spider-Man wordt Venom ----------
+function startVenomStory(ch){
+ const me=players[0];
+ const sp=actors.find(a=>a.def.id==='spiderman'),vn=actors.find(a=>a.def.id==='venom');
+ story={ch,type:'venom',phase:'talk',total:1,down:0,resc:0,need:0,sp,vn};
+ const allies=[];
+ for(const a of actors){
+  if(a===me||a===sp)continue;
+  if(a.def.team==='heroes'&&ch.allies.includes(a.def.id)&&a.def.id!==me.def.id)allies.push(a);
+  else{a.active=false;a.dead=true;a.group.visible=false;a.respawn=0;}
+ }
+ const place=(a,x,z,fx,fz)=>{const p=freeNear(x,z,a.radius);a.group.position.set(p.x,0,p.z);a.spawn.set(p.x,0,p.z);a.group.rotation.y=Math.atan2(fx-p.x,fz-p.z);};
+ place(me,0,30,0,-6);cameraStates[0].yaw=0;
+ place(sp,0,-4,0,30);sp.active=true;sp.dead=false;sp.group.visible=true;sp.stun=9999;sp.invulnerable=9999;sp.hp=sp.maxHp;
+ allies.forEach((a,i)=>{place(a,(i?1:-1)*5,34,0,-4);a.stun=9999;});   // wachten tot het gevecht begint
+ story.allies=allies;
+ civ.clear();
+ updateCamera(0,1,true);
+ playCinema(ch.intro,()=>{
+  toast('Deel 2 · '+ch.title,4);sayAs(me,'Spider-Man wacht daar. Ik ga met hem praten.',4);
+  storyProgress(true);
+ });
+}
+function updateStory(){
+ if(!story||story.type!=='venom'||state!=='playing'||cutsceneActive())return;
+ if(story.phase==='talk'){
+  const me=players[0],sp=story.sp;
+  if(me&&!me.dead&&Math.hypot(me.group.position.x-sp.group.position.x,me.group.position.z-sp.group.position.z)<5){story.phase='speaking';talkToSpiderMan();}
+ }
+}
+function talkToSpiderMan(){
+ const me=players[0],sp=story.sp,mine=story;
+ face(sp,me.group.position.x-sp.group.position.x,me.group.position.z-sp.group.position.z,1);
+ face(me,sp.group.position.x-me.group.position.x,sp.group.position.z-me.group.position.z,1);
+ const lines=[
+  [sp,'Gelukkig, je bent er. Ik voel me niet goed…',3.8],
+  [me,'Wat is er aan de hand, Spider-Man?',3.2],
+  [sp,'Dit zwarte pak… het groeit over me heen. Ik kan het niet tegenhouden!',5],
+  [sp,'Ga weg! Ik word… ik word… VENOM!',3.6],
+ ];
+ let t=0;
+ for(const [who,text,dur] of lines){const at=t;setTimeout(()=>{if(story===mine&&state==='playing')sayAs(who,text,dur);},at*1000);t+=dur+.3;}
+ setTimeout(()=>{if(story===mine&&state==='playing')transformVenom();},t*1000);
+ $('objective').textContent='Praat met Spider-Man…';
+}
+function transformVenom(){
+ const sp=story.sp,vn=story.vn,ch=story.ch,me=players[0];
+ const pos=sp.group.position.clone();
+ burst(eye(sp),'#111111',5,'sphere',1.1);burst(pos.clone().setY(.2),'#222222',9,'ring',1.0);
+ sp.active=false;sp.group.visible=false;
+ resetActor(vn,{x:pos.x,z:pos.z,rotation:Math.atan2(me.group.position.x-pos.x,me.group.position.z-pos.z)});
+ vn.maxHp=Math.round(vn.maxHp*ch.venomHp);vn.hp=vn.maxHp;vn.invulnerable=2;
+ for(const a of story.allies)a.stun=0;
+ story.phase='fight';story.crooks=[vn];
+ burst(eye(vn),'#6a1b9a',6,'sphere',1.2);
+ playCinema(['Spider-Man is veranderd in Venom!','Versla Venom om Spider-Man te redden.'],()=>{
+  sayAs(vn,'Wij zijn Venom! Wij gaan jou verslinden!',4.5);
+  storyProgress(true);
+ });
+}
+function venomWin(){
+ if(!story||story.won)return;story.won=true;
+ const sp=story.sp,vn=story.vn,ch=story.ch,me=players[0];
+ if(me)me.invulnerable=60;
+ const pos=vn.group.position.clone();
+ sp.active=true;sp.dead=false;sp.hp=sp.maxHp;sp.group.visible=true;sp.group.position.set(pos.x,0,pos.z);sp.stun=9999;sp.invulnerable=9999;
+ burst(eye(sp),'#e44',4,'sphere',1);
+ face(sp,me.group.position.x-pos.x,me.group.position.z-pos.z,1);
+ sayAs(sp,'Bedankt… je hebt me gered. Dat pak is weg.',4.5);
+ setTimeout(()=>{
+  if(state!=='playing')return;
+  playCinema(ch.outro,()=>{storyPart=1;showResult('Deel 2 voltooid!','Spider-Man is gered van Venom. Het verhaal is uit.','Opnieuw spelen (deel 2)');storyPart=2;});
+ },5200);
+}
 function storyProgress(initial=false){
+
  if(!story)return;
+ if(story.type==='venom'){
+  const o=$('objective');o.hidden=false;
+  o.textContent=story.phase==='fight'?'Versla Venom om Spider-Man te redden':'Loop naar Spider-Man en praat met hem';
+  if(!initial&&story.down>=1)venomWin();
+  return;
+ }
  const o=$('objective');o.hidden=false;
  o.textContent='Boeven: '+story.down+'/'+story.total+'  ·  Burgers gered: '+Math.min(story.resc,story.need)+'/'+story.need;
  if(initial)return;
@@ -344,7 +437,7 @@ function storyWin(){
 function storyFail(){
  if(!story||story.won||state!=='playing')return;
  const n=storyIndex%CHAPTERS.length+1;
- showResult('Mislukt.','Je werd verslagen in hoofdstuk '+n+'. Probeer het opnieuw.','Opnieuw proberen');
+ showResult('Mislukt.',story.type==='venom'?'Venom was te sterk. Probeer het opnieuw.':'Je werd verslagen in hoofdstuk '+n+'. Probeer het opnieuw.','Opnieuw proberen');
 }
 window.addEventListener('keydown',e=>{if(cutsceneActive()&&(e.code==='Enter'||e.code==='Space'||e.code==='Escape')){skipCinema();e.preventDefault();}},true);
 document.getElementById('cinema')?.addEventListener('click',skipCinema);
@@ -392,6 +485,18 @@ function updateTeleports(dt){
   for(const h of hs){if(Math.hypot(p.x-h.tx,p.z-h.tz)<3.2){teleportActor(a);break;}}
  }
 }
+
+function updateLocks(){
+ const lock=mode==='story'&&storyPart===2;
+ document.querySelectorAll('.roster-card').forEach(e=>e.classList.toggle('locked',lock&&e.dataset.id==='spiderman'));
+ if($('story-setup'))document.querySelectorAll('[data-part]').forEach(e=>{e.classList.toggle('active',+e.dataset.part===storyPart);e.setAttribute('aria-pressed',String(+e.dataset.part===storyPart));});
+}
+document.addEventListener('click',e=>{
+ const b=e.target instanceof Element?e.target.closest('[data-part]'):null;if(!b)return;
+ storyPart=+b.dataset.part;
+ if(storyPart===2&&selected==='spiderman'){chooseCharacter('captain');}
+ updateLocks();
+});
 function awardCivilian(a,text){
  if(!a||a.player<0||duel)return;
  a.kills=(a.kills||0)+1;koTotal++;score[a.def.team]++;toast(text,2.2);sound('special',.05);
@@ -963,7 +1068,7 @@ function frame(){
   if(state==='playing'&&duel)duel.update(step);else if(state==='playing'&&mode==='survival'){if(waveBreak>0){waveBreak-=step;if(waveBreak<=0)nextWave();}}else if(state==='playing'&&(mode==='battle'||mode==='pvp')){matchTime-=step;if(matchTime<=0)finishMatch();}
   world.update?.(step,elapsed);if(cutsceneActive())keys.clear();else{if(state==='playing'&&!duel)civ.update(step,{actors,players});updateActors(step);if(state==='playing')updateTeleports(step);}updateProjectiles(step);dialogue();
  }
- updateCinema();
+ updateCinema();updateStory();
  if($('round-banner')&&elapsed>roundBannerUntil)$('round-banner').hidden=true;
  if(elapsed>toastUntil)$('toast').hidden=true;
  if(state==='menu'){
