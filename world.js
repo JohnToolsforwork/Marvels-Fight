@@ -201,6 +201,33 @@ export function createWorld(scene, id = 'newyork') {
         if(g===0){road(0,(62+CITY)/2,CITY-62,false);road(0,-(62+CITY)/2,CITY-62,false);road((62+CITY)/2,0,CITY-62,true);road(-(62+CITY)/2,0,CITY-62,true);}
         else{road(g,0,CITY*2,false);road(0,g,CITY*2,true);}
       }
+      // Straatmeubilair: lantaarnpalen langs de stoep en geparkeerde auto's op de weg.
+      const lamp=(x,z,rot)=>{cyl(metal,x,2.6,z,.08,5.2,true);const ex=x+Math.sin(rot)*1.25,ez=z+Math.cos(rot)*1.25;beam(metal,[x,5.1,z],[ex,5.45,ez],.07,true);box(lit,ex,5.3,ez,.55,.12,.75,rot,true);};
+      const carCols=['#c0392b','#2e86c1','#f1c40f','#ecf0f1','#27ae60','#34495e','#e67e22','#8e44ad'];
+      let carN=0;
+      const car=(x,z,alongX)=>{
+        const cm=mat('car'+(carN%carCols.length),carCols[carN%carCols.length],{metalness:.35,roughness:.4});carN++;
+        const L=alongX?4.4:1.9,W=alongX?1.9:4.4;
+        box(cm,x,.65,z,L,.8,W,0,true);box(cm,x,1.25,z,alongX?2.3:1.7,.65,alongX?1.7:2.3,0,true);
+        box(glass,x,1.27,z,alongX?2.34:1.74,.5,alongX?1.74:2.34,0,true);
+        for(const sx of [-1,1])for(const sz of [-1,1])box(dark,x+(alongX?sx*1.4:sz*.95),.38,z+(alongX?sz*.95:sx*1.4),alongX?.8:.3,.76,alongX?.3:.8,0,true);
+        collision(x,z,L,W,1.7);
+      };
+      for(const g of lines){
+        for(let t=-CITY+25;t<=CITY-25;t+=44){
+          if(lines.some(q=>Math.abs(t-q)<14))continue;
+          if(Math.abs(g)<1&&Math.abs(t)<70)continue;
+          const side=(Math.floor(t/44)%2)?1:-1;
+          lamp(g+side*8.6,t,side>0?-Math.PI/2:Math.PI/2);      // langs de noord-zuid-straten
+          lamp(t,g+side*8.6,side>0?Math.PI:0);                 // langs de oost-west-straten
+        }
+        for(let t=-CITY+40;t<=CITY-40;t+=37){
+          if(lines.some(q=>Math.abs(t-q)<16)||Math.abs(g)<1&&Math.abs(t)<75)continue;
+          if(rnd()<.72)continue;
+          const off=(rnd()<.5?-1:1)*4.6;
+          if(rnd()<.5)car(g+off,t,false);else car(t,g+off,true);
+        }
+      }
     }
     for(let gx=-132;gx<=132;gx+=22)for(let gz=-132;gz<=132;gz+=22) {
       if(Math.abs(gx)<66&&Math.abs(gz)<66)continue;
@@ -287,6 +314,13 @@ export function createWorld(scene, id = 'newyork') {
       ring(glowDoor,tx,.1,tz,1.7);
       beam(glowDoor,[tx,0,tz],[tx,46,tz],.32,true);
       {const [tx2,tz2]=P(-7.5,.5);tree(tx2,tz2,1.1,houses.length%2);const [bx2,bz2]=P(5,-.8);sphere(leaf,bx2,.7,bz2,1.1,.8,1.1,true);sphere(leaf2,bx2+.9,.55,bz2+.5,.8,.6,.8,true);}
+      // houten hekje om de voortuin (drie zijden, met een opening bij de deur)
+      for(let lx=-5;lx<=5;lx+=1.25){ if(Math.abs(lx)<1.6)continue;
+        const [px,pz]=P(lx,d/2+4.2);box(wood,px,.55,pz,.16,1.1,.16,rot,true);
+      }
+      for(const sd of [-1,1])for(let lz=d/2+4.2;lz>=-1;lz-=1.25){const [px,pz]=P(sd*5.2,lz);box(wood,px,.55,pz,.16,1.1,.16,rot,true);}
+      for(const sd of [-1,1]){const [px,pz]=P(sd*3.4,d/2+4.2);box(wood,px,.8,pz,3.6,.12,.1,rot,true);}
+      {const [px,pz]=P(-2.1,d/2+4.2);box(wood,px,.7,pz,1.5,.1,.1,rot,true);}
       houses.push({x,z,tx,tz});
     }
     for(let i=0;i<90;i++){
@@ -308,6 +342,21 @@ export function createWorld(scene, id = 'newyork') {
       else if(t<.84){tree(x,z,1.2+rnd()*.8,0);sphere(blossom,x,6.1,z,1.5,1,1.5);}
       else if(t<.94)bushCluster(x,z,1+rnd()*.8);
       else flowerPatch(x,z);}
+    // Vijvers met riet en waterlelies in het gras
+    if(kind!=='titan'&&kind!=='savage'){
+      const waterM=mat('pondWater','#4aa8d0',{metalness:.5,roughness:.12,transparent:true,opacity:.86}),reed=mat('pondReed','#6a8f3c'),lily=mat('pondLily','#4c9a46');
+      for(let i=0;i<14;i++){
+        const a=rnd()*Math.PI*2,rr=CITY+60+rnd()*(boundary-CITY-130),x=Math.sin(a)*rr,z=Math.cos(a)*rr,r=9+rnd()*10;
+        if(Math.abs(x)>boundary-50||Math.abs(z)>boundary-50)continue;
+        if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<r+18))continue;
+        if(spawnZones&&spawnZones.some(q=>Math.hypot(q.x-x,q.z-z)<r+36))continue;
+        add('cyl',waterM,x,.03,z,r*2,.04,r*2*(.7+rnd()*.4),0,0,0,true);
+        add('cyl',stone,x,.012,z,r*2+1.6,.02,r*2*(.7+rnd()*.4)+1.6,0,0,0,true);
+        for(let k=0;k<14;k++){const ang=rnd()*6.28,rd=r*(.9+rnd()*.12);add('cone',reed,x+Math.cos(ang)*rd,.7,z+Math.sin(ang)*rd,.12,1.5,.12,0,0,0,true);}
+        for(let k=0;k<6;k++){const ang=rnd()*6.28,rd=rnd()*r*.7;add('cyl',lily,x+Math.cos(ang)*rd,.06,z+Math.sin(ang)*rd,1.2,.03,1.2,0,0,0,true);}
+        placed.push({x,z});
+      }
+    }
   }
 
   // Every environment has continuous ground. The limits are invisible solid boundaries,

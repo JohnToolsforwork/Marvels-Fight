@@ -618,6 +618,24 @@ export function createCharacter(idOrDef){
   accessories.magic?.forEach(m=>{m.userData.baseScale=m.scale.clone();});
   for(const key of ['photonGlow','electricGlow','doomGlow'])accessories[key]?.forEach(m=>{m.userData.baseScale=m.scale.clone();});
   if(accessories.foreheadGem)accessories.foreheadGem.userData.baseScale=accessories.foreheadGem.scale.clone();
+  // Extra details per personage
+  if(id==='hulk'){
+    const dk=mat('#3b7733',0,.9);
+    for(const y of [1.46,1.64,1.82])for(const sd of [-1,1])oval(body,dk,sd*.12,y,.31,.105,.068,.034);
+    box(body,dk,0,1.64,.325,.014,.5,.014);
+    oval(head,mat('#38752f',0,.9),0,.17,.235,.25,.045,.06);
+    for(const lg of legs)for(let k=0;k<7;k++){const ang=k/7*Math.PI*2;const sp=mesh(geo.cone,mat('#5a4388',0,.85),lg,Math.cos(ang)*.27,-.52,Math.sin(ang)*.25,.07,.13,.07);sp.rotation.x=Math.PI;}
+  }
+  if(id==='panther'){
+    const sv=mat('#b9c2d3',.8,.3);
+    for(const sd of [-1,1]){curve(body,sv,[[sd*.1,2.02,.3],[sd*.2,1.7,.3],[sd*.16,1.4,.29]],.012);curve(body,sv,[[sd*.28,2.0,.27],[sd*.34,1.76,.26]],.01);}
+    for(const el of arms.map(a2=>a2.userData.elbow)){curve(el,sv,[[0,-.05,.11],[0,-.2,.12],[0,-.34,.115]],.012);}
+  }
+  if(id==='spiderman'){
+    const wb=mat('#5c1520',0,.8);
+    for(let k=0;k<7;k++){const ang=-Math.PI*.9+k*(Math.PI*1.8/6);curve(head,wb,[[0,.03,.26],[Math.sin(ang)*.12,.03+Math.cos(ang)*.12,.27],[Math.sin(ang)*.24,.03+Math.cos(ang)*.24,.22]],.0055);}
+    for(const rr of [.1,.18])curve(head,wb,[[-rr*1.2,.03,.255],[-rr*.6,.03+rr*.9,.265],[rr*.6,.03+rr*.9,.265],[rr*1.2,.03,.255]],.005);
+  }
   const INK=inkMaterial();
   const inkGeos=new Set([...Object.values(bodyGeometries),geo.hips,geo.upperLimb,geo.lowerLimb,geo.boot,geo.maleFace,geo.femaleFace,geo.titanFace,geo.gauntlet,geo.neck].filter(Boolean));
   const inkTargets=[];root.traverse(o=>{if(o.isMesh&&inkGeos.has(o.geometry)&&!o.userData.ink)inkTargets.push(o);});
@@ -657,11 +675,36 @@ export function updateCharacter(rig,dt,opts={}){
     arm.rotation.y=0;
     arm.userData.elbow.rotation.x=-.11-Math.abs(stride)*.23-attack*.38-(i===1?(.35+Math.sin(t*3)*.1)*motion.talk:0);
   });
+  // ---- extra bewegingen: rennen, draaien, springen, ademen ----
+  {
+    const yawNow=rig.group.rotation.y;let dyaw=yawNow-(rig.prevYaw??yawNow);dyaw=Math.atan2(Math.sin(dyaw),Math.cos(dyaw));rig.prevYaw=yawNow;
+    const turnRate=THREE.MathUtils.clamp(dyaw/Math.max(step,.001),-6,6);
+    motion.turn=(motion.turn||0)+(turnRate-(motion.turn||0))*(1-Math.exp(-step*10));
+    const dashing=opts.dash?1:0;
+    const run=Math.max(THREE.MathUtils.clamp((motion.speed-6)/7,0,1)*walkWeight,dashing*.9);
+    motion.air=(motion.air||0)+(((opts.air?1:0)-(motion.air||0))*(1-Math.exp(-step*14)));
+    const air=motion.air*(1-motion.flight);
+    rig.userData_run=run;rig.userData_air=air;
+    if(!dead){
+      rig.body.rotation.x+=run*.2+attack*.1+air*.1+dashing*.12;
+      rig.body.rotation.y=Math.sin(rig.walk)*(.06+.05*run)*walkWeight-attack*.3*(1-air);
+      rig.body.rotation.z+=-motion.turn*.02*walkWeight;
+      rig.body.position.y+=Math.sin(t*1.9+rig.phase)*.006*(1-motion.move)+run*Math.abs(Math.sin(rig.walk))*.03;
+      rig.legs.forEach((lg,i)=>{lg.rotation.x*=(1+.4*run);lg.rotation.x=lg.rotation.x*(1-air)+(i?.25:-.6)*air;});
+      rig.knees.forEach(k=>{k.rotation.x+=run*.3+air*.75;});
+      rig.arms.forEach((arm,i)=>{
+        const side=i===0?-1:1;
+        arm.rotation.x=arm.rotation.x*(1+.35*run)*(1-air)-air*.55;
+        arm.rotation.z+=side*air*.7;
+        arm.userData.elbow.rotation.x-=run*.75;
+      });
+    }
+  }
   rig.hands.forEach(hand=>hand.rotation.set(0,0,0));
   rig.legs.forEach(leg=>leg.rotation.z=0);
   rig.fingers.forEach((f,i)=>{f.base.rotation.set(attack*(f.thumb?.55:1.03)+(talking?.13*Math.sin(t*4+i):.05),0,f.restZ);f.tip.rotation.set(attack*.9+.08,0,0);});
   rig.head.rotation.y=Math.sin(t*1.7)*.11*motion.talk+Math.sin(t*.8+rig.phase)*.035*(1-motion.talk);
-  rig.head.rotation.x=Math.sin(t*4)*.025*motion.talk+stride*.03;rig.head.rotation.z=-rig.body.rotation.z*.35;
+  rig.head.rotation.x=Math.sin(t*4)*.025*motion.talk+stride*.03-(rig.userData_run||0)*.12;rig.head.rotation.z=-rig.body.rotation.z*.35;rig.head.rotation.y-=rig.body.rotation.y*.7;
   const blinkTime=(t+rig.phase)%4.7;
   const blink=blinkTime<.16?Math.sin(blinkTime/.16*Math.PI):0;
   if(!rig.accessories.noBlink){

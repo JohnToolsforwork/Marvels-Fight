@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122110744';
-import {startUpdater} from './update.js?v=20261122110744';
-import {createCivilians} from './civilians.js?v=20261122110744';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122110744';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122110744';
-import {createWorld} from './world.js?v=20261122110744';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122110744';
-import {createDuel} from './pvp.js?v=20261122110744';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122110744';
-import {updateNPCFlight} from './npc-flight.js?v=20261122110744';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122110744';
+import {music} from './music.js?v=20261122111333';
+import {startUpdater} from './update.js?v=20261122111333';
+import {createCivilians} from './civilians.js?v=20261122111333';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122111333';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122111333';
+import {createWorld} from './world.js?v=20261122111333';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122111333';
+import {createDuel} from './pvp.js?v=20261122111333';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122111333';
+import {updateNPCFlight} from './npc-flight.js?v=20261122111333';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122111333';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -59,6 +59,10 @@ function setAtmosphere(id){
  if(!atmospheres.has(id)){
   const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,512);
   g.addColorStop(0,colors[0]);g.addColorStop(.44,colors[1]);g.addColorStop(.53,colors[2]);g.addColorStop(.68,'#817e77');g.addColorStop(1,'#323d4c');x.fillStyle=g;x.fillRect(0,0,1024,512);
+  // Zachte wolken in de lucht (in de achtergrond getekend)
+  {let seed=id.length*977+13;const rnd2=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+   for(let k=0;k<34;k++){const cx=rnd2()*1024,cy=30+rnd2()*190,sc=.6+rnd2()*1.2;
+    for(let p=0;p<7;p++){const px=cx+(rnd2()-.5)*110*sc,py=cy+(rnd2()-.5)*22*sc,pr=(22+rnd2()*30)*sc;const rg=x.createRadialGradient(px,py,2,px,py,pr);rg.addColorStop(0,'rgba(255,255,255,.55)');rg.addColorStop(.6,'rgba(255,255,255,.22)');rg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=rg;x.fillRect(px-pr,py-pr,pr*2,pr*2);}}}
   const glow=x.createRadialGradient(250,185,3,250,185,120);glow.addColorStop(0,'rgba(255,244,211,.92)');glow.addColorStop(.3,'rgba(255,239,201,.3)');glow.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=glow;x.fillRect(80,20,340,340);
   const texture=new THREE.CanvasTexture(c);texture.mapping=THREE.EquirectangularReflectionMapping;texture.colorSpace=THREE.SRGBColorSpace;
   const generator=new THREE.PMREMGenerator(renderer),environment=generator.fromEquirectangular(texture);generator.dispose();atmospheres.set(id,{texture,environment});
@@ -142,13 +146,13 @@ function makeActor(def,index){
  const marker=new THREE.Mesh(new THREE.RingGeometry(.72,.747,40),new THREE.MeshBasicMaterial({color:def.team==='heroes'?0x55cfff:0xff687e,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.position.y=.035;group.add(marker);
  const shadow=new THREE.Mesh(contactGeometry,new THREE.MeshBasicMaterial({map:contactTexture,opacity:.48,transparent:true,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.023;if(['hulk','thanos','venom'].includes(def.id))shadow.scale.setScalar(1.2);group.add(shadow);
  const labels=[0,1].map(()=>{const e=document.createElement('div');e.className='actor-label '+def.team;e.innerHTML='<span></span><i><b></b></i>';e.querySelector('span').textContent=def.name+(LEADERS[def.team]===def.id?' ★ Aanvoerder':'');actorLayer.append(e);return e;});
- return {def,rig,group,index,marker,shadow,labels,hp:def.hp,maxHp:def.hp,radius:baseRadius(def.id),vy:0,cooldown:0,specialCooldown:0,attackAnim:0,dead:false,respawn:0,hurt:0,slow:0,stun:0,invulnerable:0,speedBuff:0,moving:false,talking:false,nextTalk:0,nextAI:Math.random(),path:[],pathAge:0,aggro:0,lastAttacker:null,spawn:new THREE.Vector3(),wander:new THREE.Vector3(),nextWander:0,player:-1};
+ return {def,baseDef:def,rig,group,index,marker,shadow,labels,hp:def.hp,maxHp:def.hp,radius:baseRadius(def.id),vy:0,cooldown:0,specialCooldown:0,attackAnim:0,dead:false,respawn:0,hurt:0,slow:0,stun:0,invulnerable:0,speedBuff:0,moving:false,talking:false,nextTalk:0,nextAI:Math.random(),path:[],pathAge:0,aggro:0,lastAttacker:null,spawn:new THREE.Vector3(),wander:new THREE.Vector3(),nextWander:0,player:-1};
 }
 function resetActor(a,spawn){
  a.spawn.set(spawn.x,0,spawn.z);a.group.position.copy(a.spawn);a.group.rotation.set(0,spawn.rotation??(a.def.team==='heroes'?Math.PI:0),0);a.group.visible=true;a.maxHp=Math.round(a.def.hp*BAL[a.def.team].hp*(isLeader(a)?1.5:1)*(a.skin?.hp||1));a.hp=a.maxHp;a.dead=false;a.active=true;a.respawn=0;a.vy=0;a.cooldown=0;a.specialCooldown=0;a.attackAnim=0;a.aggro=0;a.path=[];a.pathAge=0;a.invulnerable=0;a.stun=0;a.slow=0;a.player=-1;a.wander.copy(a.spawn);a.nextWander=2+Math.random()*5;a.moveVelocity=new THREE.Vector3();a.dashDirection=new THREE.Vector3();a.dashRemaining=0;a.dashCooldown=0;a.flying=false;a.flightAxis=0;a.flyPulse=0;a.pendingAttack=null;a.speedBuff=0;a.webbedUntil=0;a.shrink=0;a.grow=0;a.nextPym='shrink';a.group.scale.setScalar(1);a.radius=baseRadius(a.def.id);a.target=null;a.lastAttacker=null;a.nextAI=.1+(a.index%5)*.07;a.specialThink=2+(a.index%6)*.45;a.healing=0;a.npcFlightTimer=undefined;a.npcFlightPhase=undefined;a.pistolCooldown=0;a.pistolAnim=0;a.pendingPistol=null;
 }
 function loadWorld(id){
- civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);{const cell=Math.max(3,Math.round((world.bounds.maxX-world.bounds.minX)/290));nav=makeNavigator(world.colliders,world.bounds,2.5,cell,cell>3?2.2:.9);}camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
+ restoreDefs();civ.clear();clearEffects();world?.dispose?.();worldId=id;world=createWorld(scene,id);{const cell=Math.max(3,Math.round((world.bounds.maxX-world.bounds.minX)/290));nav=makeNavigator(world.colliders,world.bounds,2.5,cell,cell>3?2.2:.9);}camColliders=world.colliders.filter(b=>(b.maxX-b.minX)<900&&(b.maxZ-b.minZ)<900);
  if(!actors.length){actors=ROSTER.map(makeActor);for(const a of actors)if(savedSkins[a.def.id])applySkin(a,savedSkins[a.def.id]);}
  const counters={heroes:0,villains:0};for(const a of actors){const s=world.spawns[a.def.team][counters[a.def.team]++];resetActor(a,s);}
  setAtmosphere(id);setupRoomLighting();world.setQuality?.(settings.high);
@@ -224,6 +228,7 @@ async function renderPortraits(){
  r.dispose();r.forceContextLoss();
 }
 function startGame(){
+ restoreDefs();
  pistolMode=false;
  spectating=false;specIndex=0;if($('spectate'))$('spectate').hidden=true;
  if(mode==='story')prepareStory();
@@ -610,6 +615,7 @@ document.addEventListener('click',e=>{
  if(storyPart===2&&selected==='spiderman'){chooseCharacter('captain');}
  updateLocks();
 });
+function restoreDefs(){for(const a of actors){if(a.baseDef&&a.def!==a.baseDef){a.def=a.baseDef;a.labels?.forEach(l=>{l.className='actor-label '+a.def.team;});}}}
 function awardCivilian(a,text){
  if(!a||a.player<0||duel)return;
  a.kills=(a.kills||0)+1;koTotal++;score[a.def.team]++;toast(text,2.2);sound('special',.05);
@@ -666,6 +672,7 @@ function resetDuelRound({round}){
 function cutsceneActive(){return elapsed<cutUntil;}
 function canAct(){return state==='playing'&&(!duel||duel.canAct)&&!cutsceneActive();}
 function showMenu(){
+ restoreDefs();
  cutUntil=0;cutLines=[];cutCb=null;story=null;if($('cinema'))$('cinema').hidden=true;document.body.classList.remove('cinema');if($('objective'))$('objective').hidden=true;civ.clear();music.setMood('calm');koTotal=0;for(const a of actors)a.kills=0;state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
  players=[];for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z});previewCharacter();clearEffects();resize();
 }
@@ -1046,7 +1053,7 @@ function updateActors(dt){
    }
    const cameraDistance=state==='menu'?a.group.position.distanceTo(menuCamera.position):Math.min(...players.map(p=>p.group.position.distanceTo(a.group.position)));
    a.rig.fingers.forEach(f=>f.base.visible=cameraDistance<(settings.high?30:16));
-   updateCharacter(a.rig,dt,{time:elapsed+a.index*.37,moving:a.moving,speed:a.moveSpeed||0,attacking:a.attackAnim,talking:a.talking,dead:false,flying:a.flying,rangedAttack:a.pistolAnim});
+   updateCharacter(a.rig,dt,{time:elapsed+a.index*.37,moving:a.moving,speed:a.moveSpeed||0,attacking:a.attackAnim,talking:a.talking,dead:false,flying:a.flying,rangedAttack:a.pistolAnim,air:a.group.position.y>.25&&!a.flying,dash:a.dashRemaining>0});
    if(a.pendingPistol&&canAct()){a.pendingPistol.delay-=dt;if(a.pendingPistol.delay<=0){shoot(a,canTarget(a,a.pendingPistol.target)?a.pendingPistol.target:null,1,0,'#ffd891',PISTOL);a.pendingPistol=null;}}
    if(a.pendingAttack&&canAct()){a.pendingAttack.delay-=dt;if(a.pendingAttack.delay<=0){shoot(a,a.pendingAttack.target?.dead?null:a.pendingAttack.target);a.pendingAttack=null;}}
    a.marker.visible=state!=='menu'||a!==selectedActor;a.marker.material.opacity=a.player>=0?.6+.12*Math.sin(elapsed*4):.15;a.shadow.position.y=(groundHeight(a,a.group.position.y)+.025-a.group.position.y)/a.group.scale.y;a.marker.position.y=(groundHeight(a,a.group.position.y)+.04-a.group.position.y)/a.group.scale.y;
