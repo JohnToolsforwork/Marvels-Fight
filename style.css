@@ -154,3 +154,5 @@ body.cinema #hud{opacity:.12}
 .roster-card.locked{opacity:.35;filter:grayscale(.8);cursor:not-allowed}
 #choice-modal{z-index:25}#choice-buttons .secondary-button{margin-top:10px;font-size:16px;padding:15px}
 .part-row{grid-template-columns:1fr 1fr!important}
+
+#top-damage{position:absolute;top:218px;right:25px;min-width:190px;background:#0b1423db;border:1px solid #a5b6cd26;border-radius:9px;padding:8px 12px;display:flex;flex-direction:column;gap:3px;font-size:12px;backdrop-filter:blur(10px)}#top-damage b{font-size:9px;letter-spacing:1.7px;color:#b9c8d8}#top-damage span{color:#d8e0ea}#top-damage .heroes{color:var(--hero)}#top-damage .villains{color:var(--villain)}

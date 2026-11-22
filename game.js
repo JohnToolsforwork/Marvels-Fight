@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122135518';
-import {startUpdater} from './update.js?v=20261122135518';
-import {createCivilians} from './civilians.js?v=20261122135518';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122135518';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122135518';
-import {createWorld} from './world.js?v=20261122135518';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122135518';
-import {createDuel} from './pvp.js?v=20261122135518';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122135518';
-import {updateNPCFlight} from './npc-flight.js?v=20261122135518';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122135518';
+import {music} from './music.js?v=20261122142340';
+import {startUpdater} from './update.js?v=20261122142340';
+import {createCivilians} from './civilians.js?v=20261122142340';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122142340';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122142340';
+import {createWorld} from './world.js?v=20261122142340';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122142340';
+import {createDuel} from './pvp.js?v=20261122142340';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122142340';
+import {updateNPCFlight} from './npc-flight.js?v=20261122142340';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122142340';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -623,6 +623,11 @@ function awardCivilian(a,text){
 const civ=createCivilians({scene,createCharacter,updateCharacter,slideMove,blocked,getWorld:()=>world,
  onRescue:(hero)=>{awardCivilian(hero,'Burger gered! +1 KO');if(mode==='story'&&story&&hero.player>=0){story.resc++;storyProgress();}},onKill:(a)=>awardCivilian(a,'Burger uitgeschakeld +1 KO'),say:(t)=>toast(t,3)});
 window.__mf={civilians:()=>civ.count,houses:()=>world.houses};
+// Hulp voor het trainen van de computerspeler: dezelfde route-berekening als de NPC's en de echte stand van zaken.
+window.__mf.route=(sx,sz,ex,ez)=>nav?nav({x:sx,z:sz},{x:ex,z:ez}):[];
+window.__mf.me=()=>{const p=players[0];return p?{x:p.group.position.x,y:p.group.position.y,z:p.group.position.z,yaw:cameraStates[0].yaw,hp:p.hp,max:p.maxHp,flying:!!p.flying,dead:!!p.dead}:null;};
+window.__mf.foes=()=>{const p=players[0];return p?actors.filter(a=>canTarget(p,a)&&!a.dead&&a.active!==false).map(a=>({x:a.group.position.x,y:a.group.position.y,z:a.group.position.z,id:a.def.id,hp:a.hp,max:a.maxHp})):[];};
+window.__mf.allies=()=>{const p=players[0];return p?actors.filter(a=>a!==p&&!a.dead&&a.active!==false&&a.def.team===p.def.team).map(a=>({x:a.group.position.x,z:a.group.position.z})):[];};
 function freeNear(x,z,r){
  for(let ring=0;ring<8;ring++)for(let k=0;k<(ring?12:1);k++){
   const ang=k/12*Math.PI*2,px=x+Math.cos(ang)*ring*2.2,pz=z+Math.sin(ang)*ring*2.2;
@@ -673,7 +678,7 @@ function cutsceneActive(){return elapsed<cutUntil;}
 function canAct(){return state==='playing'&&(!duel||duel.canAct)&&!cutsceneActive();}
 function showMenu(){
  restoreDefs();
- cutUntil=0;cutLines=[];cutCb=null;story=null;if($('cinema'))$('cinema').hidden=true;document.body.classList.remove('cinema');if($('objective'))$('objective').hidden=true;civ.clear();music.setMood('calm');koTotal=0;for(const a of actors)a.kills=0;state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
+ cutUntil=0;cutLines=[];cutCb=null;story=null;if($('cinema'))$('cinema').hidden=true;document.body.classList.remove('cinema');if($('objective'))$('objective').hidden=true;civ.clear();music.setMood('calm');koTotal=0;for(const a of actors){a.kills=0;a.dmgDealt=0;}state='menu';duel=null;keys.clear();touch.clear();window.speechSynthesis?.cancel();$('menu').hidden=false;$('hud').hidden=true;$('result-modal').hidden=true;$('dialogue').hidden=true;$('split-divider').hidden=true;$('toast').hidden=true;if($('round-banner'))$('round-banner').hidden=true;toastUntil=0;document.body.classList.remove('in-game','split-screen');if($('scene-caption'))$('scene-caption').hidden=false;
  players=[];for(const a of actors)resetActor(a,{x:a.spawn.x,z:a.spawn.z});previewCharacter();clearEffects();resize();
 }
 
@@ -768,7 +773,7 @@ function damage(target,amount,attacker,slow=0){
  amount*=BAL[attacker.def.team].dmg;
  if(duel){const spec=SPECS[attacker.def.id];amount*=clamp(34*spec.rate/attacker.def.damage,.6,1.4)*(['melee','hammer'].includes(spec.kind)?1.2:1);}
  if(attacker.player>=0)attacker.aggro=18;
- target.hp=Math.max(0,target.hp-amount);target.hurt=.22;target.aggro=12;target.lastAttacker=attacker;target.slow=Math.max(target.slow,slow);particles(eye(target),effectColors[attacker.def.id],5);
+ const hpBefore=target.hp;target.hp=Math.max(0,target.hp-amount);attacker.dmgDealt=(attacker.dmgDealt||0)+(hpBefore-target.hp);target.hurt=.22;target.aggro=12;target.lastAttacker=attacker;target.slow=Math.max(target.slow,slow);particles(eye(target),effectColors[attacker.def.id],5);
  if(target.player>=0)sound('hit',.06);
  // Terugslag: wie door of tegen een speler wordt geraakt, vliegt een stukje weg (met een korte stoot omhoog).
  if(target.hp>0&&attacker!==target&&(target.player>=0||attacker.player>=0)){
@@ -1135,6 +1140,7 @@ function drawMinimap(){
 function updateHud(){
  if($('ko-counter'))$('ko-counter').textContent='KO: '+koTotal;
  if($('top-kills')){const top=actors.filter(a=>a.kills>0).sort((x,y)=>y.kills-x.kills).slice(0,3);$('top-kills').innerHTML='<b>TOP 3 KO</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+a.kills;$('top-kills').append(s);});}
+ if($('top-damage')){const top=actors.filter(a=>a.dmgDealt>0).sort((x,y)=>y.dmgDealt-x.dmgDealt).slice(0,3);$('top-damage').innerHTML='<b>TOP 3 SCHADE</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+Math.round(a.dmgDealt);$('top-damage').append(s);});}
  if(state==='menu')return;
  players.forEach((a,i)=>{const bar=$(i?'p2-health-fill':'health-fill'),txt=$(i?'p2-health-text':'health-text');bar.style.width=(a.hp/a.maxHp*100)+'%';txt.textContent=a.dead?(duel?'Ronde afgelopen':mode==='deathbattle'?'Uitgeschakeld':'Terug in '+Math.ceil(a.respawn)+' s'):Math.ceil(a.hp)+' / '+a.maxHp;});
  if(mode==='deathbattle'){const al=aliveCounts();$('score-heroes').textContent=al.heroes;$('score-villains').textContent=al.villains;}else{$('score-heroes').textContent=score.heroes;$('score-villains').textContent=score.villains;}
