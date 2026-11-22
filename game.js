@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122143233';
-import {startUpdater} from './update.js?v=20261122143233';
-import {createCivilians} from './civilians.js?v=20261122143233';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122143233';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122143233';
-import {createWorld} from './world.js?v=20261122143233';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122143233';
-import {createDuel} from './pvp.js?v=20261122143233';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122143233';
-import {updateNPCFlight} from './npc-flight.js?v=20261122143233';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122143233';
+import {music} from './music.js?v=20261122154127';
+import {startUpdater} from './update.js?v=20261122154127';
+import {createCivilians} from './civilians.js?v=20261122154127';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122154127';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122154127';
+import {createWorld} from './world.js?v=20261122154127';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122154127';
+import {createDuel} from './pvp.js?v=20261122154127';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122154127';
+import {updateNPCFlight} from './npc-flight.js?v=20261122154127';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122154127';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -625,7 +625,7 @@ const civ=createCivilians({scene,createCharacter,updateCharacter,slideMove,block
 window.__mf={civilians:()=>civ.count,houses:()=>world.houses};
 // Hulp voor het trainen van de computerspeler: dezelfde route-berekening als de NPC's en de echte stand van zaken.
 window.__mf.route=(sx,sz,ex,ez)=>nav?nav({x:sx,z:sz},{x:ex,z:ez}):[];
-window.__mf.me=(i=0)=>{const p=players[i];return p?{x:p.group.position.x,y:p.group.position.y,z:p.group.position.z,yaw:cameraStates[i].yaw,hp:p.hp,max:p.maxHp,flying:!!p.flying,dead:!!p.dead}:null;};
+window.__mf.me=(i=0)=>{const p=players[i];return p?{x:p.group.position.x,y:p.group.position.y,z:p.group.position.z,yaw:cameraStates[i].yaw,hp:p.hp,max:p.maxHp,flying:!!p.flying,dead:!!p.dead,id:p.def.id,range:(SPECS[p.def.id]?.range)||3,kind:(SPECS[p.def.id]?.kind)||''}:null;};
 window.__mf.foes=(i=0)=>{const p=players[i];return p?actors.filter(a=>canTarget(p,a)&&!a.dead&&a.active!==false).map(a=>({x:a.group.position.x,y:a.group.position.y,z:a.group.position.z,id:a.def.id,hp:a.hp,max:a.maxHp,player:a.player})):[];};
 window.__mf.allies=(i=0)=>{const p=players[i];return p?actors.filter(a=>a!==p&&!a.dead&&a.active!==false&&a.def.team===p.def.team).map(a=>({x:a.group.position.x,z:a.group.position.z})):[];};
 window.__mf.stats=()=>players.map(p=>({id:p.def.id,kills:p.kills||0,schade:Math.round(p.dmgDealt||0)}));
