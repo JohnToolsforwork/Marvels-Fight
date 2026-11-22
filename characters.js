@@ -552,7 +552,8 @@ export function createCharacter(idOrDef){
     for(let j=0;j<3;j++){const ridge=mesh(geo.cone,bone,body,0,1.57+j*.19,-.29,.06,.19,.06);ridge.rotation.x=-Math.PI/2;accessories.bones.push(ridge);}
     box(head,white,0,-.155,.262,.22,.035,.018);
   }else if(id==='doom'){
-    const hood=mat('#315c41',.015,.92);accessories.hood=group(head);
+    const doomCol=({'#f1f1ee':['#f4efe0','#ece5cf'],'#6b7480':['#3a4048','#2d3238']})[def.color]||['#315c41','#284e39'];   // cape en kap passen bij de skin
+    const hood=mat(doomCol[0],.015,.92);accessories.hood=group(head);
     mesh(capGeo,hood,accessories.hood,0,.12,-.055,.37,.30,.33).name='Green hood crown';
     oval(accessories.hood,hood,0,-.075,-.24,.31,.33,.13);
     curve(accessories.hood,hood,[[-.29,-.28,.12],[-.335,.08,.16],[-.25,.29,.18],[0,.40,.09],[.25,.29,.18],[.335,.08,.16],[.29,-.28,.12]],.051);
@@ -560,7 +561,7 @@ export function createCharacter(idOrDef){
     eyes.forEach(e=>e.position.z=.279);lids.forEach(l=>l.position.z=.312);
     box(head,darkGear,0,-.18,.274,.155,.07,.012);for(let i=-2;i<=2;i++)box(head,steel,i*.029,-.18,.285,.012,.059,.01);
     panel(head,mat('#d0dadf',.8,.27),[[-.024,.105],[.024,.105],[.04,-.09],[-.04,-.09]],.29);
-    accessories.cape=cape(body,'#284e39',1.21,1.8);
+    accessories.cape=cape(body,doomCol[1],1.21,1.8);
     for(const side of [-1,1])disc(body,gold,side*.245,2.02,.22,.075,.025);
     curve(body,gold,[[-.245,2.02,.24],[0,1.89,.29],[.245,2.02,.24]],.012);
     arms.forEach(arm=>mesh(geo.gauntlet,steel,arm.userData.elbow,0,-.19,.016,.13,.21,.132));
