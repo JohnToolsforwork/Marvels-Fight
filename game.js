@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122142340';
-import {startUpdater} from './update.js?v=20261122142340';
-import {createCivilians} from './civilians.js?v=20261122142340';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122142340';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122142340';
-import {createWorld} from './world.js?v=20261122142340';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122142340';
-import {createDuel} from './pvp.js?v=20261122142340';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122142340';
-import {updateNPCFlight} from './npc-flight.js?v=20261122142340';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122142340';
+import {music} from './music.js?v=20261122143037';
+import {startUpdater} from './update.js?v=20261122143037';
+import {createCivilians} from './civilians.js?v=20261122143037';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122143037';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122143037';
+import {createWorld} from './world.js?v=20261122143037';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122143037';
+import {createDuel} from './pvp.js?v=20261122143037';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122143037';
+import {updateNPCFlight} from './npc-flight.js?v=20261122143037';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122143037';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -1138,7 +1138,7 @@ function drawMinimap(){
  for(const a of actors){if(a.dead)continue;const [x,z]=map(a.group.position.x,a.group.position.z);ctx.fillStyle=a.player>=0?'#d5ff48':a.def.team==='heroes'?'#61c9ff':'#ff687c';ctx.beginPath();ctx.arc(x,z,a.player>=0?3.5:2,0,TAU);ctx.fill();if(a.player>=0){ctx.strokeStyle='#fff';ctx.stroke();}}
 }
 function updateHud(){
- if($('ko-counter'))$('ko-counter').textContent='KO: '+koTotal;
+ if($('ko-counter'))$('ko-counter').innerHTML='KO: '+koTotal+(players[0]?.dmgDealt>0?'<small>Jouw schade: '+Math.round(players[0].dmgDealt)+'</small>':'');
  if($('top-kills')){const top=actors.filter(a=>a.kills>0).sort((x,y)=>y.kills-x.kills).slice(0,3);$('top-kills').innerHTML='<b>TOP 3 KO</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+a.kills;$('top-kills').append(s);});}
  if($('top-damage')){const top=actors.filter(a=>a.dmgDealt>0).sort((x,y)=>y.dmgDealt-x.dmgDealt).slice(0,3);$('top-damage').innerHTML='<b>TOP 3 SCHADE</b>'+(top.length?'':'<span>nog niemand</span>');top.forEach((a,i)=>{const s=document.createElement('span');s.className=a.def.team;s.textContent=(i+1)+'. '+a.def.name+' · '+Math.round(a.dmgDealt);$('top-damage').append(s);});}
  if(state==='menu')return;
