@@ -138,6 +138,23 @@ function mergeStaticChildren(parent){
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(ps,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(ns,3));const o=new THREE.Mesh(g,parts[0].material);o.castShadow=true;o.receiveShadow=true;parent.add(o);
   }
 }
+
+// Een wapen wordt één enkel voorwerp: alle losse onderdelen (gevest, lemmet, banden) worden samengevoegd tot één mesh met kleuren per punt.
+let weaponMat=null;
+function mergeColored(g){
+  const kids=g.children.filter(c=>c.isMesh&&!Array.isArray(c.material)&&!c.userData.ink&&!(c.material.emissive&&c.material.emissive.getHex()));
+  if(kids.length<2)return;
+  const ps=[],ns=[],cs=[];
+  for(const c of kids){
+    c.updateMatrix();const gg=(c.geometry.index?c.geometry.toNonIndexed():c.geometry.clone()).applyMatrix4(c.matrix),col=c.material.color;
+    ps.push(...gg.attributes.position.array);ns.push(...gg.attributes.normal.array);
+    for(let i=0;i<gg.attributes.position.count;i++)cs.push(col.r,col.g,col.b);
+    g.remove(c);gg.dispose();
+  }
+  const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(ps,3));geom.setAttribute('normal',new THREE.Float32BufferAttribute(ns,3));geom.setAttribute('color',new THREE.Float32BufferAttribute(cs,3));
+  weaponMat??=new THREE.MeshStandardMaterial({vertexColors:true,metalness:.45,roughness:.4});
+  const o=new THREE.Mesh(geom,weaponMat);o.castShadow=true;o.name='Wapen (één voorwerp)';g.add(o);
+}
 const skin=mat('#d8a180',0,.84);const lightSkin=mat('#e1b494',0,.84);const white=mat('#e5eced',.05,.4);const black=mat('#151c23',.1,.6);const steel=mat('#aebfc6',.8,.25);const gold=mat('#d8b668',.8,.28);const red=mat('#b92f41');
 
 const emblemCache=new Map();
@@ -573,7 +590,6 @@ export function createCharacter(idOrDef){
     }
     eyes.forEach(e=>e.position.z=.26);
     const strap=box(body,darkGear,0,1.72,.29,.065,.85,.018);strap.rotation.z=-.47;
-    box(body,steel,-.07,1.84,.307,.075,.085,.022).rotation.z=-.47;
     accessories.crossedScabbards=[];
     for(const side of [-1,1]){
       const sheath=group(body,side*.015,1.68,-.31);sheath.rotation.z=side*.55;
@@ -659,10 +675,6 @@ export function createCharacter(idOrDef){
     const tint=(hex,f)=>{const c=new THREE.Color(hex);if(f>0)c.lerp(new THREE.Color('#ffffff'),f);else c.lerp(new THREE.Color('#000000'),-f);return '#'+c.getHexString();};
     const hi=mat(tint(def.color,.07),armored?.5:.02,armored?.34:.8),lo=mat(tint(def.color,-.25),armored?.5:.02,armored?.34:.8);
     const cz=chestZ-.012,sc=slenderSpider?.82:feminine?.9:chunky?1.25:1;
-    if(!['ironman','ultron','doom','vision','antman'].includes(id)){
-      for(const sd of [-1,1]){oval(body,hi,sd*.125*sc,1.8,cz-.004,.13*sc,.085,.02);oval(body,lo,sd*.1*sc,1.62,cz-.012,.085*sc,.03,.014);}
-      box(body,lo,0,1.66,cz-.018,.012,.36,.012);
-    }
     for(const a of arms)mesh(geo.gauntlet,accent,a,0,-.34,0,.128*K0,.034,.133*K0).name='Arm band';
     for(const k of knees){oval(k,accent,0,.0,.115*K0,.085*K0,.085*K0,.05);mesh(geo.gauntlet,accent,k,0,-.43,.01,.138*K0,.03,.15*K0).name='Boot cuff';}
     if(['widow','hawkeye','deadpool','wolverine','redskull','killmonger','captain'].includes(id))for(const lg of legs)mesh(geo.gauntlet,darkGear,lg,0,-.3,0,.172*K0,.05,.182*K0).name='Thigh strap';
@@ -713,6 +725,7 @@ export function createCharacter(idOrDef){
       for(const sd of [-1,1])oval(head,mat('#3b0e18'),sd*.108,.075,.236,.075,.025,.012);
     }
   }
+  if(id!=='hawkeye')for(const w of new Set([accessories.katana,accessories.hammer,accessories.weapon]))if(w)mergeColored(w);
   const INK=inkMaterial();
   const inkGeos=new Set([...Object.values(bodyGeometries),geo.hips,geo.upperLimb,geo.lowerLimb,geo.boot,geo.maleFace,geo.femaleFace,geo.titanFace,geo.gauntlet,geo.neck].filter(Boolean));
   const inkTargets=[];root.traverse(o=>{if(o.isMesh&&inkGeos.has(o.geometry)&&!o.userData.ink)inkTargets.push(o);});
