@@ -1,15 +1,15 @@
 import * as THREE from './vendor/three.module.js';
-import {music} from './music.js?v=20261122154127';
-import {startUpdater} from './update.js?v=20261122154127';
-import {createCivilians} from './civilians.js?v=20261122154127';
-import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122154127';
-import {SoftwareRenderer} from './software-renderer.js?v=20261122154127';
-import {createWorld} from './world.js?v=20261122154127';
-import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122154127';
-import {createDuel} from './pvp.js?v=20261122154127';
-import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122154127';
-import {updateNPCFlight} from './npc-flight.js?v=20261122154127';
-import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122154127';
+import {music} from './music.js?v=20261122172953';
+import {startUpdater} from './update.js?v=20261122172953';
+import {createCivilians} from './civilians.js?v=20261122172953';
+import {ROSTER,SKINS,skinDef,createCharacter,updateCharacter,setQuality as setCharacterQuality} from './characters.js?v=20261122172953';
+import {SoftwareRenderer} from './software-renderer.js?v=20261122172953';
+import {createWorld} from './world.js?v=20261122172953';
+import {blocked,slideMove,clearSight,segmentBox,makeNavigator} from './physics.js?v=20261122172953';
+import {createDuel} from './pvp.js?v=20261122172953';
+import {createProjectileVisual,createMeleeVisual} from './powers.js?v=20261122172953';
+import {updateNPCFlight} from './npc-flight.js?v=20261122172953';
+import {resolveThirdPersonCamera,isThirdPersonCameraSafe} from './third-person-camera.js?v=20261122172953';
 
 const $=id=>document.getElementById(id),TAU=Math.PI*2,clamp=THREE.MathUtils.clamp;
 const canvas=$('game-canvas'),scene=new THREE.Scene(),clock=new THREE.Clock();
@@ -213,7 +213,7 @@ function fillRoster(){
  if(!ROSTER.some(a=>a.id===selected&&a.team===team))selected=ROSTER.find(a=>a.team===team).id;chooseCharacter(selected);
 }
 function fillP2(){
- const ds=ROSTER.filter(a=>a.team!==team);if(!ds.some(a=>a.id===p2id))p2id=ds[0].id;
+ const ds=[...ROSTER.filter(a=>a.team!==team),...ROSTER.filter(a=>a.team===team&&a.id!==selected)];if(!ds.some(a=>a.id===p2id))p2id=ds[0].id;   // speler 2 mag ook uit hetzelfde team kiezen (in een duel vechten de spelers dan toch tegen elkaar)
  $('p2-select').replaceChildren(...ds.map(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;o.selected=d.id===p2id;return o;}));
 }
 function chooseMode(value){mode=value;if($('story-setup'))$('story-setup').hidden=value!=='story';updateLocks();document.querySelectorAll('[data-mode]').forEach(e=>{e.classList.toggle('active',e.dataset.mode===mode);e.setAttribute('aria-pressed',String(e.dataset.mode===mode));});$('pvp-setup').hidden=mode!=='pvp';}
@@ -699,7 +699,8 @@ function removeNode(node){node.removeFromParent();node.traverse(o=>{if(o.materia
 function clearEffects(){for(const s of shots){removeNode(s.mesh);if(s.tether)removeNode(s.tether);}for(const e of effects)removeNode(e.mesh);shots=[];effects=[];}
 function eye(a){return a.group.position.clone().add(new THREE.Vector3(0,(a.rig.height||2.8)*a.group.scale.y*.6,0));}
 function canTarget(a,b){
- if(!a||!b||a===b||b.dead||b.active===false||a.def.team===b.def.team)return false;
+ if(!a||!b||a===b||b.dead||b.active===false)return false;
+ if(a.def.team===b.def.team&&!(duel&&a.player>=0&&b.player>=0))return false;
  // Free exploration stays safe until a human player joins the fighting.
  return mode!=='explore'||a.player>=0||b.player<0||b.aggro>0;
 }
